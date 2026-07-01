@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Notepad++</title>
+
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%234f8cff'/><stop offset='1' stop-color='%23764ba2'/></linearGradient></defs><rect width='64' height='64' rx='14' fill='url(%23g)'/><rect x='14' y='12' width='32' height='42' rx='3' fill='white'/><line x1='20' y1='22' x2='42' y2='22' stroke='%234f8cff' stroke-width='2.5' stroke-linecap='round'/><line x1='20' y1='30' x2='42' y2='30' stroke='%23764ba2' stroke-width='2.5' stroke-linecap='round'/><line x1='20' y1='38' x2='38' y2='38' stroke='%234f8cff' stroke-width='2.5' stroke-linecap='round'/><line x1='20' y1='46' x2='34' y2='46' stroke='%23764ba2' stroke-width='2.5' stroke-linecap='round'/><circle cx='48' cy='48' r='10' fill='%23ffd966' stroke='white' stroke-width='2.5'/><text x='48' y='53' font-family='Arial' font-size='14' font-weight='800' fill='%23764ba2' text-anchor='middle'>+</text></svg>" />
+
+<style>
+:root {
+  --bg: #f0f2f5;
+  --bg-gradient: linear-gradient(135deg, #f0f2f5 0%, #e6e9f0 100%);
+  --card-bg: #ffffff;
+  --sidebar-bg: #fafbfc;
+  --text: #1a1a2e;
+  --text-muted: #666;
+  --hint: #999;
+  --border: #e5e7eb;
+  --border-strong: #ddd;
+  --primary: #4f8cff;
+  --primary-hover: #3b73e0;
+  --secondary: #764ba2;
+  --danger: #dc2626;
+  --success: #059669;
+  --success-hover: #047857;
+  --warn: #d97706;
+  --switch-off: #cbd5e1;
+  --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --shadow-hover: 0 6px 24px rgba(0,0,0,0.10);
+  --selected: rgba(79, 140, 255, 0.12);
+  --hover-bg: rgba(79, 140, 255, 0.06);
+}
+[data-theme="dark"] {
+  --bg: #0f172a;
+  --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  --card-bg: #1e293b;
+  --sidebar-bg: #182032;
+  --text: #f1f5f9;
+  --text-muted: #cbd5e1;
+  --hint: #94a3b8;
+  --border: #334155;
+  --border-strong: #475569;
+  --primary: #60a5fa;
+  --primary-hover: #93c5fd;
+  --secondary: #c084fc;
+  --danger: #f87171;
+  --success: #10b981;
+  --success-hover: #059669;
+  --warn: #fbbf24;
+  --switch-off: #475569;
+  --shadow: 0 4px 20px rgba(0,0,0,0.4);
+  --shadow-hover: 0 6px 24px rgba(0,0,0,0.5);
+  --selected: rgba(96, 165, 250, 0.20);
+  --hover-bg: rgba(96, 165, 250, 0.10);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  background: var(--bg-gradient);
+  color: var(--text);
+  transition: background 0.3s, color 0.3s;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* ---------- Top bar ---------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  flex-shrink: 0;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.title-icon {
+  -webkit-text-fill-color: initial;
+  background: none;
+}
+.toolbar {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.tb-btn {
+  background: var(--card-bg);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s;
+}
+.tb-btn:hover { background: var(--hover-bg); border-color: var(--primary); }
+.tb-btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.tb-btn.primary:hover { background: var(--primary-hover); }
+.tb-btn.danger { background: var(--danger); color: #fff; border-color: var(--danger); }
+.tb-btn.danger:hover { opacity: 0.85; }
+.tb-btn.success { background: var(--success); color: #fff; border-color: var(--success); }
+.tb-btn.success:hover { background: var(--success-hover); }
+.tb-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.icon-btn {
+  background: var(--card-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.icon-btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-hover); }
+
+.fontsize-wrap {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 0.8rem; color: var(--text-muted);
+}
+.fontsize-wrap input {
+  width: 44px;
+  padding: 4px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--border-strong);
+  background: var(--card-bg); color: var(--text);
+  font-family: inherit;
+  text-align: center;
+}
+
+/* ---------- Main layout ---------- */
+.main {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ---------- Sidebar ---------- */
+.sidebar {
+  width: 280px;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: width 0.2s ease;
+}
+.sidebar.collapsed { width: 0; border-right: 0; }
+.sidebar-header {
+  padding: 10px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sidebar-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.file-count {
+  background: var(--primary);
+  color: #fff;
+  border-radius: 12px;
+  padding: 1px 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.search-wrap {
+  padding: 8px 12px;
+  flex-shrink: 0;
+}
+.search-input {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-family: inherit;
+  outline: none;
+}
+.search-input:focus { border-color: var(--primary); }
+.file-list {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 4px 8px 12px;
+}
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-bottom: 2px;
+  position: relative;
+}
+.file-item:hover { background: var(--hover-bg); }
+.file-item.active {
+  background: var(--selected);
+  border-left: 3px solid var(--primary);
+  padding-left: 7px;
+}
+.file-item-icon { flex-shrink: 0; font-size: 0.95rem; }
+.file-item-name {
+  flex: 1;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+.file-item-meta {
+  font-size: 0.68rem;
+  color: var(--hint);
+  white-space: nowrap;
+}
+.file-item-delete {
+  background: transparent;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 2px 5px;
+  border-radius: 4px;
+  opacity: 1;
+  transition: opacity 0.15s, background 0.15s;
+}
+.file-item:hover .file-item-delete { opacity: 0.7; }
+.file-item-delete:hover { opacity: 1; background: rgba(220, 38, 38, 0.15); }
+
+.empty-files {
+  text-align: center;
+  color: var(--hint);
+  font-size: 0.82rem;
+  padding: 30px 12px;
+  font-style: italic;
+}
+
+.storage-meter {
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.storage-bar {
+  height: 5px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.storage-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--success), var(--warn));
+  transition: width 0.3s;
+}
+
+/* ---------- Editor area ---------- */
+.editor-area {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+.file-header {
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 12px;
+}
+.file-name-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+.file-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background 0.15s;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.file-name:hover { background: var(--hover-bg); }
+.file-name-input {
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 4px 8px;
+  border: 2px solid var(--primary);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-family: inherit;
+  outline: none;
+  min-width: 200px;
+  flex: 1;
+}
+.modified-dot {
+  color: var(--warn);
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.editor-wrap {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--card-bg);
+}
+.line-numbers {
+  flex: 0 0 auto;
+  padding: 12px 8px 12px 12px;
+  background: var(--sidebar-bg);
+  color: var(--hint);
+  border-right: 1px solid var(--border);
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: var(--editor-font-size, 14px);
+  line-height: 1.6;
+  text-align: right;
+  user-select: none;
+  pointer-events: none;
+  white-space: pre;
+  overflow: hidden;
+  min-width: 45px;
+}
+.editor {
+  flex: 1 1 auto;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  outline: none;
+  resize: none;
+  background: var(--card-bg);
+  color: var(--text);
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: var(--editor-font-size, 14px);
+  line-height: 1.6;
+  overflow: auto;
+  white-space: pre;
+  word-wrap: normal;
+  tab-size: 4;
+}
+
+/* ---------- Find & Replace bar ---------- */
+.find-bar {
+  display: none;
+  padding: 8px 16px;
+  background: var(--card-bg);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.find-bar.show { display: flex; }
+.find-bar input {
+  padding: 5px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  outline: none;
+  width: 180px;
+}
+.find-bar input:focus { border-color: var(--primary); }
+.find-bar .find-status {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+/* ---------- Status bar ---------- */
+.statusbar {
+  padding: 6px 16px;
+  background: var(--card-bg);
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.status-left, .status-right {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.status-pill {
+  background: var(--sidebar-bg);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+/* ---------- Toast ---------- */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--card-bg);
+  color: var(--text);
+  padding: 10px 18px;
+  border-radius: 8px;
+  box-shadow: var(--shadow-hover);
+  border-left: 4px solid var(--success);
+  font-size: 0.88rem;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.3s;
+  z-index: 1000;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.error { border-left-color: var(--danger); }
+.toast.warn { border-left-color: var(--warn); }
+
+/* ---------- Modal ---------- */
+.modal-bg {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 999;
+  align-items: center;
+  justify-content: center;
+}
+.modal-bg.show { display: flex; }
+.modal {
+  background: var(--card-bg);
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-hover);
+  max-width: 420px;
+  width: 90%;
+}
+.modal h3 { margin-bottom: 12px; color: var(--text); }
+.modal p { color: var(--text-muted); margin-bottom: 16px; line-height: 1.5; }
+.modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+@media (max-width: 700px) {
+  .sidebar { position: absolute; height: 100%; z-index: 50; box-shadow: var(--shadow-hover); }
+  .sidebar.collapsed { transform: translateX(-100%); width: 280px; border-right: 1px solid var(--border); }
+  .toolbar { gap: 4px; }
+  .tb-btn { padding: 5px 8px; font-size: 0.78rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="title">
+    <span class="title-icon">📝</span>
+    <span>Notepad<sup>++</sup></span>
+  </div>
+  <div class="toolbar">
+    <button class="tb-btn" id="btn-toggle-sidebar" title="Toggle file list">☰</button>
+    <button class="tb-btn primary" id="btn-new" title="New file (Ctrl+N)">📄 New</button>
+    <button class="tb-btn" id="btn-save" title="Save (Ctrl+S)">💾 Save</button>
+    <button class="tb-btn" id="btn-saveas" title="Save As (renames current file)">📑 Rename</button>
+    <button class="tb-btn" id="btn-download" title="Download as .txt">⬇️ Download</button>
+    <button class="tb-btn" id="btn-import" title="Import .txt file">📂 Import</button>
+    <input type="file" id="file-import" accept=".txt,.md,.json,.xml,.html,.css,.js,text/*" style="display:none;">
+    <button class="tb-btn" id="btn-find" title="Find/Replace (Ctrl+F)">🔍 Find</button>
+    <span class="fontsize-wrap">
+      <span>Font:</span>
+      <input type="number" id="font-size" min="10" max="32" value="14">
+    </span>
+    <button class="icon-btn" id="theme-toggle" title="Toggle dark mode">🌙</button>
+  </div>
+</div>
+
+<!-- Find/Replace bar -->
+<div class="find-bar" id="findBar">
+  <input type="text" id="findInput" placeholder="Find...">
+  <input type="text" id="replaceInput" placeholder="Replace with...">
+  <button class="tb-btn" id="btn-find-next">Find Next</button>
+  <button class="tb-btn" id="btn-replace">Replace</button>
+  <button class="tb-btn" id="btn-replace-all">Replace All</button>
+  <label style="display:flex;align-items:center;gap:4px;font-size:0.8rem;cursor:pointer;">
+    <input type="checkbox" id="find-case"> Aa
+  </label>
+  <span class="find-status" id="find-status"></span>
+  <button class="tb-btn" id="btn-close-find">✕</button>
+</div>
+
+<!-- Main: Sidebar + Editor -->
+<div class="main">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">📁 My Files <span class="file-count" id="file-count">0</span></span>
+    </div>
+    <div class="search-wrap">
+      <input type="text" id="search-files" class="search-input" placeholder="🔎 Search files...">
+    </div>
+    <div class="file-list" id="file-list"></div>
+    <div class="storage-meter">
+      <div id="storage-info">0 KB used</div>
+      <div class="storage-bar"><div class="storage-bar-fill" id="storage-bar"></div></div>
+    </div>
+  </aside>
+
+  <!-- Editor area -->
+  <main class="editor-area">
+    <div class="file-header">
+      <div class="file-name-wrap">
+        <span id="modified-dot" class="modified-dot" style="visibility:hidden;">●</span>
+        <span class="file-name" id="file-name" title="Click to rename">untitled.txt</span>
+        <button class="icon-btn" id="btn-rename" title="Rename file" style="width:28px;height:28px;font-size:0.85rem;">✏️</button>
+      </div>
+      <div style="font-size:0.78rem;color:var(--text-muted);" id="last-saved">Not saved yet</div>
+    </div>
+
+    <div class="editor-wrap">
+      <div class="line-numbers" id="line-numbers">1</div>
+      <textarea class="editor" id="editor" spellcheck="false" placeholder="Start typing here... your work auto-saves to your browser."></textarea>
+    </div>
+
+    <div class="statusbar">
+      <div class="status-left">
+        <span class="status-pill" id="stat-lines">Lines: 1</span>
+        <span class="status-pill" id="stat-words">Words: 0</span>
+        <span class="status-pill" id="stat-chars">Chars: 0</span>
+        <span class="status-pill" id="stat-selection">No selection</span>
+      </div>
+      <div class="status-right">
+        <span class="status-pill" id="stat-cursor">Ln 1, Col 1</span>
+        <span class="status-pill" id="stat-autosave">Auto-save: ✓</span>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<!-- Confirm modal -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <h3 id="modal-title">Confirm</h3>
+    <p id="modal-message">Are you sure?</p>
+    <div class="modal-actions">
+      <button class="tb-btn" id="modal-cancel">Cancel</button>
+      <button class="tb-btn danger" id="modal-ok">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   STORAGE LAYER
+   ============================================================ */
+const STORAGE_KEY = 'notepadpp.files.v1';      // map<id, {id, name, content, created, updated}>
+const META_KEY = 'notepadpp.meta.v1';          // {lastOpenId, theme, fontSize}
+
+function loadFiles() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) { return {}; }
+}
+function saveFiles(files) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(files));
+    return true;
+  } catch (e) {
+    showToast('⚠️ Storage quota exceeded! Delete some old files.', 'error');
+    return false;
+  }
+}
+function loadMeta() {
+  try {
+    const raw = localStorage.getItem(META_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) { return {}; }
+}
+function saveMeta(meta) {
+  try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch (e) {}
+}
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+function uuid() {
+  return 'f_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 9);
+}
+function defaultFileName(d) {
+  d = d || new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return 'Note-' + d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) +
+         'T' + pad(d.getHours()) + '-' + pad(d.getMinutes()) + '-' + pad(d.getSeconds()) + '.txt';
+}
+function formatBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+  return (b / 1024 / 1024).toFixed(2) + ' MB';
+}
+function relativeTime(ts) {
+  const d = Date.now() - ts;
+  if (d < 60000) return 'just now';
+  if (d < 3600000) return Math.floor(d / 60000) + 'm ago';
+  if (d < 86400000) return Math.floor(d / 3600000) + 'h ago';
+  return Math.floor(d / 86400000) + 'd ago';
+}
+function getStorageUsage() {
+  let total = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    const v = localStorage.getItem(k);
+    total += (k.length + (v ? v.length : 0)) * 2; // approx UTF-16
+  }
+  return total;
+}
+const STORAGE_LIMIT = 5 * 1024 * 1024; // ~5MB browser limit estimate
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let files = loadFiles();
+let meta = loadMeta();
+let currentId = null;
+let isModified = false;
+let saveTimer = null;
+
+/* ============================================================
+   THEME
+   ============================================================ */
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('theme-toggle').textContent = t === 'dark' ? '☀️' : '🌙';
+}
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme') || 'light';
+  const nx = cur === 'light' ? 'dark' : 'light';
+  applyTheme(nx);
+  meta.theme = nx; saveMeta(meta);
+}
+(function early() {
+  applyTheme(meta.theme || 'light');
+})();
+
+/* ============================================================
+   DOM REFERENCES (after load)
+   ============================================================ */
+document.addEventListener('DOMContentLoaded', function() {
+  const editor = document.getElementById('editor');
+  const lineNumbers = document.getElementById('line-numbers');
+  const fileListEl = document.getElementById('file-list');
+  const fileCountEl = document.getElementById('file-count');
+  const searchInput = document.getElementById('search-files');
+  const fileNameEl = document.getElementById('file-name');
+  const modifiedDot = document.getElementById('modified-dot');
+  const lastSavedEl = document.getElementById('last-saved');
+  const fontSizeInput = document.getElementById('font-size');
+  const statLines = document.getElementById('stat-lines');
+  const statWords = document.getElementById('stat-words');
+  const statChars = document.getElementById('stat-chars');
+  const statSelection = document.getElementById('stat-selection');
+  const statCursor = document.getElementById('stat-cursor');
+  const statAutosave = document.getElementById('stat-autosave');
+  const storageInfo = document.getElementById('storage-info');
+  const storageBar = document.getElementById('storage-bar');
+  const sidebar = document.getElementById('sidebar');
+  const toast = document.getElementById('toast');
+
+  // Find bar elements
+  const findBar = document.getElementById('findBar');
+  const findInput = document.getElementById('findInput');
+  const replaceInput = document.getElementById('replaceInput');
+  const findCase = document.getElementById('find-case');
+  const findStatus = document.getElementById('find-status');
+
+  // Modal elements
+  const modalBg = document.getElementById('modal-bg');
+  const modalTitle = document.getElementById('modal-title');
+  const modalMessage = document.getElementById('modal-message');
+  const modalOk = document.getElementById('modal-ok');
+  const modalCancel = document.getElementById('modal-cancel');
+
+  /* ---------- Font size ---------- */
+  function setFontSize(px) {
+    px = Math.max(10, Math.min(32, parseInt(px, 10) || 14));
+    document.documentElement.style.setProperty('--editor-font-size', px + 'px');
+    fontSizeInput.value = px;
+    meta.fontSize = px; saveMeta(meta);
+  }
+  setFontSize(meta.fontSize || 14);
+  fontSizeInput.addEventListener('change', () => setFontSize(fontSizeInput.value));
+
+  /* ---------- Toast ---------- */
+  function showToast(msg, type) {
+    toast.textContent = msg;
+    toast.className = 'toast show' + (type ? ' ' + type : '');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => { toast.className = 'toast'; }, 2400);
+  }
+  window.showToast = showToast; // for global error handler
+
+  /* ---------- Modal ---------- */
+  function confirmModal(title, message, okLabel) {
+    return new Promise(resolve => {
+      modalTitle.textContent = title;
+      modalMessage.textContent = message;
+      modalOk.textContent = okLabel || 'Delete';
+      modalBg.classList.add('show');
+      function done(ok) {
+        modalBg.classList.remove('show');
+        modalOk.removeEventListener('click', okHandler);
+        modalCancel.removeEventListener('click', cancelHandler);
+        resolve(ok);
+      }
+      function okHandler() { done(true); }
+      function cancelHandler() { done(false); }
+      modalOk.addEventListener('click', okHandler);
+      modalCancel.addEventListener('click', cancelHandler);
+    });
+  }
+
+  /* ---------- File operations ---------- */
+  function listFilesSorted() {
+    return Object.values(files).sort((a, b) => (b.updated || 0) - (a.updated || 0));
+  }
+
+  function renderFileList() {
+    const filter = searchInput.value.toLowerCase().trim();
+    const list = listFilesSorted().filter(f => !filter || f.name.toLowerCase().includes(filter));
+    fileCountEl.textContent = Object.keys(files).length;
+    if (list.length === 0) {
+      fileListEl.innerHTML = '<div class="empty-files">' + (filter ? 'No files match your search.' : 'No saved files yet. Start typing!') + '</div>';
+    } else {
+      fileListEl.innerHTML = list.map(f => {
+        const isActive = f.id === currentId;
+        return `<div class="file-item ${isActive ? 'active' : ''}" data-id="${f.id}">
+          <span class="file-item-icon">📄</span>
+          <span class="file-item-name" title="${escapeAttr(f.name)}">${escapeHtml(f.name)}</span>
+          <span class="file-item-meta">${relativeTime(f.updated || f.created)}</span>
+          <button class="file-item-delete" data-id="${f.id}" title="Delete">🗑️</button>
+        </div>`;
+      }).join('');
+    }
+    updateStorageMeter();
+  }
+
+  function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function escapeAttr(s) { return escapeHtml(s).replace(/"/g, '&quot;'); }
+
+  function updateStorageMeter() {
+    const used = getStorageUsage();
+    const pct = Math.min(100, (used / STORAGE_LIMIT) * 100);
+    storageInfo.textContent = formatBytes(used) + ' used (' + Object.keys(files).length + ' files)';
+    storageBar.style.width = pct + '%';
+    if (pct > 80) storageBar.style.background = 'var(--danger)';
+    else if (pct > 60) storageBar.style.background = 'var(--warn)';
+    else storageBar.style.background = 'linear-gradient(90deg, var(--success), var(--warn))';
+  }
+
+  function newFile(initialContent) {
+    const id = uuid();
+    const now = Date.now();
+    files[id] = { id, name: defaultFileName(), content: initialContent || '', created: now, updated: now };
+    saveFiles(files);
+    openFile(id);
+    renderFileList();
+    showToast('📄 New file created');
+  }
+
+  function openFile(id) {
+    if (!files[id]) return;
+    if (isModified) {
+      // Autosave current before switching
+      saveCurrent(true);
+    }
+    currentId = id;
+    meta.lastOpenId = id; saveMeta(meta);
+    const f = files[id];
+    editor.value = f.content || '';
+    fileNameEl.textContent = f.name;
+    isModified = false;
+    updateModifiedDot();
+    updateLineNumbers();
+    updateStats();
+    updateLastSaved();
+    renderFileList();
+    editor.focus();
+  }
+
+  function saveCurrent(silent) {
+    if (!currentId) return;
+    const f = files[currentId];
+    if (!f) return;
+    f.content = editor.value;
+    f.updated = Date.now();
+    const ok = saveFiles(files);
+    if (ok) {
+      isModified = false;
+      updateModifiedDot();
+      updateLastSaved();
+      statAutosave.textContent = 'Saved ✓';
+      statAutosave.style.color = 'var(--success)';
+      if (!silent) showToast('💾 Saved');
+      renderFileList();
+    }
+  }
+
+  function updateLastSaved() {
+    if (!currentId) { lastSavedEl.textContent = ''; return; }
+    const f = files[currentId];
+    if (!f) return;
+    lastSavedEl.textContent = 'Saved ' + relativeTime(f.updated);
+  }
+
+  function updateModifiedDot() {
+    modifiedDot.style.visibility = isModified ? 'visible' : 'hidden';
+  }
+
+  function deleteFile(id) {
+    if (!files[id]) return;
+    delete files[id];
+    saveFiles(files);
+    if (currentId === id) {
+      // Open most recent file, or create a new blank one
+      const remaining = listFilesSorted();
+      if (remaining.length > 0) openFile(remaining[0].id);
+      else newFile('');
+    } else {
+      renderFileList();
+    }
+    showToast('🗑️ File deleted');
+  }
+
+  /* ---------- Rename ---------- */
+  function startRename() {
+    if (!currentId) return;
+    const f = files[currentId];
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'file-name-input';
+    input.value = f.name;
+    input.maxLength = 100;
+    fileNameEl.replaceWith(input);
+    input.focus();
+    input.select();
+    let done = false;
+    const finalize = (commit) => {
+      if (done) return;
+      done = true;
+      let newName = commit ? input.value.trim() : f.name;
+      if (!newName) newName = defaultFileName();
+      f.name = newName;
+      f.updated = Date.now();
+      saveFiles(files);
+      const span = document.createElement('span');
+      span.id = 'file-name';
+      span.className = 'file-name';
+      span.title = 'Click to rename';
+      span.textContent = newName;
+      span.onclick = startRename;
+      input.replaceWith(span);
+      // Rebind reference
+      const newRef = document.getElementById('file-name');
+      window.fileNameEl = newRef;
+      renderFileList();
+      if (commit && newName !== f.name) showToast('✏️ Renamed');
+    };
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); finalize(true); }
+      else if (e.key === 'Escape') { e.preventDefault(); finalize(false); }
+    });
+    input.addEventListener('blur', () => finalize(true));
+  }
+  fileNameEl.addEventListener('click', startRename);
+
+  /* ---------- Editor events ---------- */
+  function updateLineNumbers() {
+    const lines = editor.value.split('\n').length || 1;
+    let s = '';
+    for (let i = 1; i <= lines; i++) s += i + '\n';
+    lineNumbers.textContent = s.replace(/\n$/, '');
+    lineNumbers.scrollTop = editor.scrollTop;
+  }
+
+  function updateStats() {
+    const text = editor.value;
+    const lines = text.length === 0 ? 1 : text.split('\n').length;
+    const chars = text.length;
+    const words = text.trim().length === 0 ? 0 : text.trim().split(/\s+/).length;
+    statLines.textContent = 'Lines: ' + lines;
+    statWords.textContent = 'Words: ' + words;
+    statChars.textContent = 'Chars: ' + chars;
+
+    // Cursor pos
+    const cursor = editor.selectionStart;
+    const before = text.substring(0, cursor);
+    const ln = (before.match(/\n/g) || []).length + 1;
+    const lastNl = before.lastIndexOf('\n');
+    const col = cursor - (lastNl + 1) + 1;
+    statCursor.textContent = 'Ln ' + ln + ', Col ' + col;
+
+    // Selection
+    const sel = editor.selectionEnd - editor.selectionStart;
+    if (sel > 0) {
+      const selText = text.substring(editor.selectionStart, editor.selectionEnd);
+      const selLines = selText.split('\n').length;
+      const selWords = selText.trim().length === 0 ? 0 : selText.trim().split(/\s+/).length;
+      statSelection.textContent = `Sel: ${sel}c, ${selWords}w, ${selLines}L`;
+    } else {
+      statSelection.textContent = 'No selection';
+    }
+  }
+
+  editor.addEventListener('input', () => {
+    isModified = true;
+    updateModifiedDot();
+    updateLineNumbers();
+    updateStats();
+    statAutosave.textContent = 'Saving...';
+    statAutosave.style.color = 'var(--warn)';
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => saveCurrent(true), 800);
+  });
+  editor.addEventListener('click', updateStats);
+  editor.addEventListener('keyup', updateStats);
+  editor.addEventListener('select', updateStats);
+  editor.addEventListener('scroll', () => { lineNumbers.scrollTop = editor.scrollTop; });
+
+  // Tab key support
+  editor.addEventListener('keydown', e => {
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const start = editor.selectionStart, end = editor.selectionEnd;
+      const value = editor.value;
+      if (e.shiftKey) {
+        // outdent: remove leading tab/4 spaces from current line(s)
+        const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+        if (value.substring(lineStart, lineStart + 1) === '\t') {
+          editor.value = value.substring(0, lineStart) + value.substring(lineStart + 1);
+          editor.selectionStart = Math.max(lineStart, start - 1);
+          editor.selectionEnd = end - 1;
+        } else if (value.substring(lineStart, lineStart + 4) === '    ') {
+          editor.value = value.substring(0, lineStart) + value.substring(lineStart + 4);
+          editor.selectionStart = Math.max(lineStart, start - 4);
+          editor.selectionEnd = end - 4;
+        }
+      } else {
+        // insert tab
+        editor.value = value.substring(0, start) + '\t' + value.substring(end);
+        editor.selectionStart = editor.selectionEnd = start + 1;
+      }
+      isModified = true;
+      updateLineNumbers();
+      updateStats();
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => saveCurrent(true), 800);
+    }
+  });
+
+  /* ---------- Sidebar interactions ---------- */
+  fileListEl.addEventListener('click', async (e) => {
+    const delBtn = e.target.closest('.file-item-delete');
+    const item = e.target.closest('.file-item');
+    if (delBtn) {
+      e.stopPropagation();
+      const id = delBtn.getAttribute('data-id');
+      const f = files[id]; if (!f) return;
+      const ok = await confirmModal('Delete file?', `Are you sure you want to delete "${f.name}"? This cannot be undone.`, 'Delete');
+      if (ok) deleteFile(id);
+      return;
+    }
+    if (item) {
+      const id = item.getAttribute('data-id');
+      if (id !== currentId) openFile(id);
+    }
+  });
+
+  searchInput.addEventListener('input', renderFileList);
+
+  /* ---------- Toolbar buttons ---------- */
+  document.getElementById('btn-new').addEventListener('click', () => newFile(''));
+  document.getElementById('btn-save').addEventListener('click', () => saveCurrent(false));
+  document.getElementById('btn-saveas').addEventListener('click', startRename);
+  document.getElementById('btn-rename').addEventListener('click', startRename);
+  document.getElementById('btn-toggle-sidebar').addEventListener('click', () => sidebar.classList.toggle('collapsed'));
+  document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+
+  document.getElementById('btn-download').addEventListener('click', () => {
+    if (!currentId) return;
+    const f = files[currentId];
+    const blob = new Blob([editor.value], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = f.name;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+    showToast('⬇️ Downloaded');
+  });
+
+  document.getElementById('btn-import').addEventListener('click', () => {
+    document.getElementById('file-import').click();
+  });
+  document.getElementById('file-import').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const content = ev.target.result;
+      const id = uuid();
+      const now = Date.now();
+      files[id] = { id, name: file.name, content, created: now, updated: now };
+      saveFiles(files);
+      openFile(id);
+      renderFileList();
+      showToast('📂 Imported "' + file.name + '"');
+    };
+    reader.readAsText(file);
+    e.target.value = ''; // reset
+  });
+
+  /* ---------- Find & Replace ---------- */
+  function toggleFindBar() {
+    findBar.classList.toggle('show');
+    if (findBar.classList.contains('show')) {
+      findInput.focus();
+      findInput.select();
+    } else {
+      findStatus.textContent = '';
+      editor.focus();
+    }
+  }
+  document.getElementById('btn-find').addEventListener('click', toggleFindBar);
+  document.getElementById('btn-close-find').addEventListener('click', toggleFindBar);
+
+  function findNext() {
+    const needle = findInput.value;
+    if (!needle) return;
+    const haystack = editor.value;
+    const caseSensitive = findCase.checked;
+    const start = editor.selectionEnd;
+    let idx;
+    if (caseSensitive) idx = haystack.indexOf(needle, start);
+    else {
+      const hLow = haystack.toLowerCase(), nLow = needle.toLowerCase();
+      idx = hLow.indexOf(nLow, start);
+    }
+    if (idx === -1) {
+      // wrap
+      if (caseSensitive) idx = haystack.indexOf(needle);
+      else idx = haystack.toLowerCase().indexOf(needle.toLowerCase());
+      if (idx === -1) { findStatus.textContent = 'No matches'; return; }
+      findStatus.textContent = 'Wrapped to start';
+    } else {
+      const total = countOccurrences(haystack, needle, caseSensitive);
+      findStatus.textContent = total + ' match' + (total === 1 ? '' : 'es');
+    }
+    editor.focus();
+    editor.setSelectionRange(idx, idx + needle.length);
+    // Scroll into view
+    const beforeIdx = haystack.substring(0, idx);
+    const lineNum = (beforeIdx.match(/\n/g) || []).length;
+    const lineHeight = parseInt(getComputedStyle(editor).lineHeight, 10) || 22;
+    editor.scrollTop = Math.max(0, lineNum * lineHeight - editor.clientHeight / 2);
+  }
+  function countOccurrences(text, needle, cs) {
+    if (!needle) return 0;
+    const h = cs ? text : text.toLowerCase();
+    const n = cs ? needle : needle.toLowerCase();
+    let count = 0, idx = 0;
+    while ((idx = h.indexOf(n, idx)) !== -1) { count++; idx += n.length; }
+    return count;
+  }
+  function replaceOne() {
+    const needle = findInput.value, repl = replaceInput.value;
+    if (!needle) return;
+    const sel = editor.value.substring(editor.selectionStart, editor.selectionEnd);
+    const match = findCase.checked ? (sel === needle) : (sel.toLowerCase() === needle.toLowerCase());
+    if (match) {
+      const before = editor.value.substring(0, editor.selectionStart);
+      const after = editor.value.substring(editor.selectionEnd);
+      editor.value = before + repl + after;
+      editor.selectionStart = editor.selectionEnd = before.length + repl.length;
+      isModified = true; updateLineNumbers(); updateStats();
+      clearTimeout(saveTimer); saveTimer = setTimeout(() => saveCurrent(true), 600);
+    }
+    findNext();
+  }
+function replaceAll() {
+  const needle = findInput.value, repl = replaceInput.value;
+  if (!needle) return;
+  const cs = findCase.checked;
+  let text = editor.value, count = 0;
+  if (cs) {
+    const parts = text.split(needle);
+    count = parts.length - 1;
+    text = parts.join(repl);
+  } else {
+    // Bulletproof regex escaping — immune to copy-paste mangling
+    const SPECIAL_CHARS = '.*+?^${}()|' + String.fromCharCode(92) + String.fromCharCode(91) + String.fromCharCode(93);
+    let escaped = '';
+    for (const ch of needle) {
+      if (SPECIAL_CHARS.indexOf(ch) >= 0) escaped += '\\' + ch;
+      else escaped += ch;
+    }
+    const re = new RegExp(escaped, 'gi');
+    text = text.replace(re, (m) => { count++; return repl; });
+  }
+  if (count > 0) {
+    editor.value = text;
+    isModified = true; updateLineNumbers(); updateStats();
+    clearTimeout(saveTimer); saveTimer = setTimeout(() => saveCurrent(true), 600);
+    findStatus.textContent = 'Replaced ' + count;
+    showToast('🔄 Replaced ' + count + ' occurrence' + (count === 1 ? '' : 's'));
+  } else {
+    findStatus.textContent = 'No matches';
+  }
+}
+  document.getElementById('btn-find-next').addEventListener('click', findNext);
+  document.getElementById('btn-replace').addEventListener('click', replaceOne);
+  document.getElementById('btn-replace-all').addEventListener('click', replaceAll);
+  findInput.addEventListener('keydown', e => { if (e.key === 'Enter') findNext(); });
+  replaceInput.addEventListener('keydown', e => { if (e.key === 'Enter') replaceOne(); });
+
+  /* ---------- Keyboard shortcuts ---------- */
+  document.addEventListener('keydown', e => {
+    const mod = e.ctrlKey || e.metaKey;
+    if (!mod) return;
+    const key = e.key.toLowerCase();
+    if (key === 's') { e.preventDefault(); saveCurrent(false); }
+    else if (key === 'n') { e.preventDefault(); newFile(''); }
+    else if (key === 'f') { e.preventDefault(); if (!findBar.classList.contains('show')) toggleFindBar(); else { findInput.focus(); findInput.select(); } }
+    else if (key === 'g' && findBar.classList.contains('show')) { e.preventDefault(); findNext(); }
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && findBar.classList.contains('show')) toggleFindBar();
+  });
+
+  // Warn user on close if there are unsaved changes
+  window.addEventListener('beforeunload', e => {
+    if (isModified) {
+      saveCurrent(true); // try to save before leaving
+    }
+  });
+
+  /* ---------- Periodic timestamp refresh ---------- */
+  setInterval(() => {
+    if (currentId) updateLastSaved();
+    renderFileList(); // refresh "X mins ago" in sidebar
+  }, 30000);
+
+  /* ---------- INIT ---------- */
+  function init() {
+    files = loadFiles();
+    meta = loadMeta();
+    applyTheme(meta.theme || 'light');
+
+    // Open last file, or create new
+    const lastId = meta.lastOpenId;
+    if (lastId && files[lastId]) {
+      currentId = lastId;
+      const f = files[lastId];
+      editor.value = f.content || '';
+      fileNameEl.textContent = f.name;
+    } else {
+      const remaining = listFilesSorted();
+      if (remaining.length > 0) {
+        currentId = remaining[0].id;
+        const f = files[currentId];
+        editor.value = f.content || '';
+        fileNameEl.textContent = f.name;
+        meta.lastOpenId = currentId; saveMeta(meta);
+      } else {
+        newFile('');
+        return; // newFile already calls openFile which sets everything
+      }
+    }
+    isModified = false;
+    updateModifiedDot();
+    updateLineNumbers();
+    updateStats();
+    updateLastSaved();
+    renderFileList();
+    editor.focus();
+  }
+  init();
+});
+</script>
+</body>
+</html>

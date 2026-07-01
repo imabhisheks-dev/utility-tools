@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>JSON → XML Converter</title>
+
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%234f8cff'/><stop offset='1' stop-color='%23764ba2'/></linearGradient></defs><rect width='64' height='64' rx='14' fill='url(%23g)'/><text x='8' y='42' font-family='Consolas,monospace' font-size='22' font-weight='800' fill='%23ffd966'>{ }</text><text x='38' y='42' font-family='Consolas,monospace' font-size='22' font-weight='800' fill='white'>&lt;/&gt;</text></svg>" />
+
+<style>
+  :root {
+    --bg: #f0f2f5;
+    --bg-gradient: linear-gradient(135deg, #f0f2f5 0%, #e6e9f0 100%);
+    --card-bg: #ffffff;
+    --text: #1a1a2e;
+    --text-muted: #666;
+    --hint: #999;
+    --border: #e5e7eb;
+    --border-strong: #ddd;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --danger: #dc2626;
+    --success: #059669;
+    --success-hover: #047857;
+    --gutter-bg: #f6f8fa;
+    --gutter-text: #8b949e;
+    --gutter-border: #d0d7de;
+    --switch-off: #cbd5e1;
+    --shadow: 0 4px 20px rgba(0,0,0,0.06);
+    --shadow-hover: 0 6px 24px rgba(0,0,0,0.10);
+
+    --xml-tag: #2563eb;
+    --xml-attr: #b45309;
+    --xml-value: #059669;
+    --xml-bracket: #6b7280;
+    --error-bg: rgba(220, 38, 38, 0.08);
+  }
+  [data-theme="dark"] {
+    --bg: #0f172a;
+    --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    --card-bg: #1e293b;
+    --text: #f1f5f9;
+    --text-muted: #cbd5e1;
+    --hint: #94a3b8;
+    --border: #334155;
+    --border-strong: #475569;
+    --primary: #3b82f6;
+    --primary-hover: #60a5fa;
+    --danger: #f87171;
+    --success: #10b981;
+    --success-hover: #059669;
+    --gutter-bg: #161f31;
+    --gutter-text: #6e7681;
+    --gutter-border: #30363d;
+    --switch-off: #475569;
+    --shadow: 0 4px 20px rgba(0,0,0,0.4);
+    --shadow-hover: 0 6px 24px rgba(0,0,0,0.5);
+
+    --xml-tag: #60a5fa;
+    --xml-attr: #fbbf24;
+    --xml-value: #4ade80;
+    --xml-bracket: #94a3b8;
+    --error-bg: rgba(248, 113, 113, 0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: var(--bg-gradient);
+    padding: 20px;
+    color: var(--text);
+    transition: background 0.3s ease, color 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  .container {
+    max-width: 1700px;
+    margin: 0 auto;
+    width: 100%;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 4px;
+    font-size: 1.6rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--primary), var(--danger));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    flex-shrink: 0;
+  }
+  .subtitle {
+    text-align: center;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+  .top-actions {
+    position: fixed;
+    top: 16px; right: 16px;
+    display: flex; gap: 8px;
+    z-index: 100;
+  }
+  .icon-btn {
+    background: var(--card-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+    padding: 0;
+  }
+  .icon-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+
+  .options-bar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    background: var(--card-bg);
+    padding: 10px 18px;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    margin: 0 auto 10px;
+    max-width: fit-content;
+    flex-shrink: 0;
+  }
+  .toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: var(--switch-off);
+    transition: 0.3s;
+    border-radius: 20px;
+  }
+  .slider::before {
+    content: "";
+    position: absolute;
+    height: 14px; width: 14px;
+    left: 3px; bottom: 3px;
+    background: #fff;
+    transition: 0.3s;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .switch input:checked + .slider { background: var(--primary); }
+  .switch input:checked + .slider::before { transform: translateX(16px); }
+  .toggle-icon { font-size: 0.95rem; }
+
+  .opt-input {
+    font-size: 0.85em;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border-strong);
+    background: var(--card-bg);
+    color: var(--text);
+    font-family: inherit;
+    outline: none;
+    width: 110px;
+    transition: border-color 0.15s;
+  }
+  .opt-input:focus { border-color: var(--primary); }
+  .opt-select {
+    font-size: 0.85em;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border-strong);
+    background: var(--card-bg);
+    color: var(--text);
+    font-family: inherit;
+    cursor: pointer;
+    outline: none;
+  }
+
+  .btn-row {
+    text-align: center;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  button.primary-btn,
+  button.secondary-btn,
+  button.warn-btn {
+    color: #fff; border: none;
+    padding: 9px 22px;
+    font-size: 0.9rem;
+    border-radius: 7px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+    box-shadow: var(--shadow);
+  }
+  .primary-btn { background: var(--primary); }
+  .primary-btn:hover { background: var(--primary-hover); box-shadow: var(--shadow-hover); }
+  .secondary-btn { background: var(--text-muted); }
+  .secondary-btn:hover { opacity: 0.85; }
+  .warn-btn { background: var(--success); }
+  .warn-btn:hover { background: var(--success-hover); }
+  button:active { transform: scale(0.97); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .panel {
+    display: flex;
+    flex-direction: column;
+    background: var(--card-bg);
+    padding: 12px;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    min-width: 0;
+    min-height: 0;
+  }
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px; flex-wrap: wrap; gap: 8px;
+    flex-shrink: 0;
+  }
+  .panel-title {
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: var(--primary);
+  }
+  .panel-title.label-2 { color: var(--danger); }
+
+  .code-box {
+    display: flex;
+    border: 2px solid var(--border-strong);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--card-bg);
+    transition: border-color 0.2s;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .code-box:focus-within { border-color: var(--primary); }
+  .code-box.invalid { border-color: var(--danger); }
+
+  .gutter {
+    flex: 0 0 auto;
+    min-width: 45px;
+    padding: 12px 8px 12px 10px;
+    background: var(--gutter-bg);
+    color: var(--gutter-text);
+    border-right: 1px solid var(--gutter-border);
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    text-align: right;
+    user-select: none;
+    pointer-events: none;
+    white-space: pre;
+    overflow: hidden;
+  }
+  .code-content {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    overflow: hidden;
+  }
+
+  textarea.code-input,
+  .code-output {
+    width: 100%;
+    height: 100%;
+    padding: 12px;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    resize: none;
+    outline: none;
+    overflow: auto;
+    white-space: pre;
+    display: block;
+    flex: 1 1 auto;
+    tab-size: 2;
+  }
+  .code-output[contenteditable="false"] { user-select: text; cursor: text; }
+
+  .xml-tag     { color: var(--xml-tag); font-weight: 600; }
+  .xml-attr    { color: var(--xml-attr); }
+  .xml-value   { color: var(--xml-value); }
+  .xml-bracket { color: var(--xml-bracket); }
+
+  .error-block {
+    padding: 12px;
+    color: var(--danger);
+    background: var(--error-bg);
+    border-left: 3px solid var(--danger);
+    border-radius: 4px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.85rem;
+    white-space: pre-wrap;
+    width: 100%;
+  }
+
+  .status-row {
+    text-align: center;
+    margin-bottom: 8px;
+    min-height: 22px;
+    flex-shrink: 0;
+  }
+  .status {
+    display: none;
+    padding: 6px 14px;
+    border-radius: 7px;
+    font-size: 0.82rem;
+    margin: 0 auto;
+    max-width: fit-content;
+  }
+  .status.error {
+    display: inline-block;
+    background: var(--error-bg);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+  }
+  .status.ok {
+    display: inline-block;
+    background: rgba(5, 150, 105, 0.10);
+    color: var(--success);
+    border: 1px solid var(--success);
+  }
+
+  .badge {
+    background: var(--primary); color: #fff;
+    border-radius: 20px;
+    padding: 2px 9px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .copy-btn, .download-btn {
+    color: #fff; border: none;
+    padding: 4px 12px;
+    font-size: 0.78rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .copy-btn { background: var(--success); }
+  .copy-btn:hover { background: var(--success-hover); }
+  .download-btn { background: var(--primary); }
+  .download-btn:hover { background: var(--primary-hover); }
+
+  @media (max-width: 1000px) {
+    .grid { grid-template-columns: 1fr; }
+    body, html { height: auto; min-height: 100vh; }
+  }
+  @media (max-width: 700px) { h1 { font-size: 1.3rem; } }
+</style>
+</head>
+<body>
+
+<div class="top-actions">
+  <button class="icon-btn" id="theme-toggle" title="Toggle dark mode">🌙</button>
+</div>
+
+<div class="container">
+  <h1>JSON → XML Converter</h1>
+  <p class="subtitle">
+    Convert JSON to well-formed XML. Configure root element, array item names, and attribute prefixes.<br>
+    <span style="color:var(--hint);font-size:0.85em;">All processing is local. Nothing is uploaded.</span>
+  </p>
+
+  <div class="options-bar">
+    <label class="toggle-wrap" title="Root element name">
+      <span class="toggle-icon">🌳</span>
+      <span>Root:</span>
+      <input type="text" id="opt-root" class="opt-input" value="root" maxlength="50">
+    </label>
+    <label class="toggle-wrap" title="Default name for array items">
+      <span class="toggle-icon">📋</span>
+      <span>Item:</span>
+      <input type="text" id="opt-item" class="opt-input" value="item" maxlength="50">
+    </label>
+    <label class="toggle-wrap" title="Indent size">
+      <span class="toggle-icon">📏</span>
+      <span>Indent</span>
+      <select id="opt-indent" class="opt-select">
+        <option value="2">2 spaces</option>
+        <option value="4">4 spaces</option>
+        <option value="tab">Tab</option>
+      </select>
+    </label>
+    <label class="toggle-wrap" title="Treat keys starting with '@' as XML attributes (e.g., '@id': 'x' → id='x')">
+      <span class="toggle-icon">@</span>
+      <span>'@' as attributes</span>
+      <span class="switch"><input type="checkbox" id="opt-attrs" checked><span class="slider"></span></span>
+    </label>
+    <label class="toggle-wrap" title="Treat key '#text' as element text content">
+      <span class="toggle-icon">#</span>
+      <span>'#text' as text</span>
+      <span class="switch"><input type="checkbox" id="opt-text" checked><span class="slider"></span></span>
+    </label>
+    <label class="toggle-wrap" title="Add &lt;?xml ... ?&gt; declaration">
+      <span class="toggle-icon">📜</span>
+      <span>XML declaration</span>
+      <span class="switch"><input type="checkbox" id="opt-decl" checked><span class="slider"></span></span>
+    </label>
+    <label class="toggle-wrap" title="Wrap text in CDATA when it contains special chars">
+      <span class="toggle-icon">🛡️</span>
+      <span>Auto CDATA</span>
+      <span class="switch"><input type="checkbox" id="opt-cdata"><span class="slider"></span></span>
+    </label>
+    <label class="toggle-wrap" title="Apply syntax highlighting">
+      <span class="toggle-icon">🎨</span>
+      <span>Syntax highlight</span>
+      <span class="switch"><input type="checkbox" id="opt-highlight" checked><span class="slider"></span></span>
+    </label>
+  </div>
+
+  <div class="btn-row">
+    <button class="primary-btn" id="btnConvert">🔄 Convert to XML</button>
+    <button class="warn-btn" id="btnCopy">📋 Copy</button>
+    <button class="primary-btn" id="btnDownload">⬇️ Download</button>
+    <button class="secondary-btn" id="btnSample">📄 Sample</button>
+    <button class="secondary-btn" id="btnClear">🗑️ Clear</button>
+  </div>
+
+  <div class="status-row">
+    <div id="status" class="status"></div>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">📥 Input JSON</span>
+        <span class="badge" id="input-count">0 lines</span>
+      </div>
+      <div class="code-box" id="inputWrap">
+        <div class="gutter" id="inputLines">1</div>
+        <div class="code-content">
+          <textarea id="input" class="code-input" placeholder="Paste your JSON here..." spellcheck="false"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title label-2">📤 Output XML</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span class="badge" id="output-count">0 lines</span>
+          <button class="copy-btn" id="btnCopy2">📋 Copy</button>
+        </div>
+      </div>
+      <div class="code-box">
+        <div class="gutter" id="outputLines">&nbsp;</div>
+        <div class="code-content">
+          <div id="output" class="code-output" contenteditable="false"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- Theme ---------- */
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme') || 'light';
+  const nx = cur === 'light' ? 'dark' : 'light';
+  applyTheme(nx);
+  try { localStorage.setItem('json2xml-theme', nx); } catch (e) {}
+}
+(function early() {
+  let s = 'light';
+  try { s = localStorage.getItem('json2xml-theme') || 'light'; } catch(e){}
+  document.documentElement.setAttribute('data-theme', s);
+})();
+
+document.addEventListener('DOMContentLoaded', function() {
+  let saved = 'light';
+  try { saved = localStorage.getItem('json2xml-theme') || 'light'; } catch(e){}
+  applyTheme(saved);
+  document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+
+  const inputEl   = document.getElementById('input');
+  const outputEl  = document.getElementById('output');
+  const inputLines  = document.getElementById('inputLines');
+  const outputLines = document.getElementById('outputLines');
+  const inputCount  = document.getElementById('input-count');
+  const outputCount = document.getElementById('output-count');
+  const inputWrap   = document.getElementById('inputWrap');
+  const statusEl    = document.getElementById('status');
+
+  /* ---------- Helpers ---------- */
+  function showStatus(msg, ok) {
+    statusEl.textContent = msg;
+    statusEl.className = 'status ' + (ok ? 'ok' : 'error');
+    if (ok) setTimeout(() => { statusEl.style.display='none'; statusEl.className='status'; }, 4000);
+  }
+  function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+  function escapeXmlText(s) {
+    return String(s)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;');
+  }
+  function escapeXmlAttr(s) {
+    return String(s)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  function updateLineNumbers(el, text) {
+    const lines = (text || '').split('\n').length || 1;
+    let html = '';
+    for (let i = 1; i <= lines; i++) html += i + '\n';
+    el.textContent = html.replace(/\n$/, '');
+  }
+  function updateInputCount() {
+    const t = inputEl.value;
+    const n = t.length === 0 ? 0 : t.split('\n').length;
+    inputCount.textContent = n + (n === 1 ? ' line' : ' lines');
+  }
+  function syncScroll(src, gutter) { gutter.scrollTop = src.scrollTop; }
+
+  /* ---------- Sanitize key into valid XML name ---------- */
+  function sanitizeName(name) {
+    let s = String(name).replace(/[^a-zA-Z0-9_:.\-]/g, '_');
+    if (!/^[a-zA-Z_]/.test(s)) s = '_' + s;
+    return s || 'item';
+  }
+
+  /* ---------- Core converter ---------- */
+  function getOpts() {
+    const indentVal = document.getElementById('opt-indent').value;
+    return {
+      root: document.getElementById('opt-root').value.trim() || 'root',
+      item: document.getElementById('opt-item').value.trim() || 'item',
+      indent: indentVal === 'tab' ? '\t' : ' '.repeat(parseInt(indentVal, 10)),
+      attrs: document.getElementById('opt-attrs').checked,
+      text: document.getElementById('opt-text').checked,
+      decl: document.getElementById('opt-decl').checked,
+      cdata: document.getElementById('opt-cdata').checked,
+      highlight: document.getElementById('opt-highlight').checked
+    };
+  }
+
+  function needsCdata(s) {
+    return /[<>&]/.test(s) || /\n/.test(s);
+  }
+
+  function valueToString(v, opts) {
+    if (v === null) return '';
+    if (typeof v === 'boolean') return v ? 'true' : 'false';
+    return String(v);
+  }
+
+  /**
+   * Convert a JS object to an array of XML lines.
+   * @param {*} value - the JSON value
+   * @param {string} tagName - element name to use for this value
+   * @param {number} depth
+   * @param {object} opts
+   * @returns {string[]} lines
+   */
+  function toXmlLines(value, tagName, depth, opts) {
+    const pad = opts.indent.repeat(depth);
+    const safeName = sanitizeName(tagName);
+
+    // Null
+    if (value === null) {
+      return [pad + '<' + safeName + ' xsi:nil="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"/>'];
+    }
+    // Primitive
+    if (typeof value !== 'object') {
+      const text = valueToString(value, opts);
+      if (text === '') return [pad + '<' + safeName + '/>'];
+      if (opts.cdata && needsCdata(text)) {
+        if (text.indexOf('\n') >= 0) {
+          return [pad + '<' + safeName + '><![CDATA[' + text + ']]></' + safeName + '>'];
+        }
+        return [pad + '<' + safeName + '><![CDATA[' + text + ']]></' + safeName + '>'];
+      }
+      return [pad + '<' + safeName + '>' + escapeXmlText(text) + '</' + safeName + '>'];
+    }
+    // Array
+    if (Array.isArray(value)) {
+      // Each array element rendered as <safeName> repeated (i.e., tagName already singular)
+      if (value.length === 0) return [pad + '<' + safeName + '/>'];
+      const out = [];
+      value.forEach(v => {
+        const sub = toXmlLines(v, safeName, depth, opts);
+        sub.forEach(l => out.push(l));
+      });
+      return out;
+    }
+    // Object
+    const keys = Object.keys(value);
+
+    // Separate attributes (@key), text (#text), and child elements
+    const attrs = [];
+    let textContent = null;
+    const childKeys = [];
+    keys.forEach(k => {
+      if (opts.attrs && k.charAt(0) === '@') {
+        attrs.push({ name: sanitizeName(k.substring(1)), value: valueToString(value[k], opts) });
+      } else if (opts.text && k === '#text') {
+        textContent = valueToString(value[k], opts);
+      } else {
+        childKeys.push(k);
+      }
+    });
+
+    let openTag = '<' + safeName;
+    attrs.forEach(a => { openTag += ' ' + a.name + '="' + escapeXmlAttr(a.value) + '"'; });
+
+    // Empty content
+    if (childKeys.length === 0 && textContent === null) {
+      return [pad + openTag + '/>'];
+    }
+    // Text-only content
+    if (childKeys.length === 0 && textContent !== null) {
+      if (opts.cdata && needsCdata(textContent)) {
+        return [pad + openTag + '><![CDATA[' + textContent + ']]></' + safeName + '>'];
+      }
+      return [pad + openTag + '>' + escapeXmlText(textContent) + '</' + safeName + '>'];
+    }
+
+    const out = [pad + openTag + '>'];
+    if (textContent !== null) {
+      out.push(opts.indent.repeat(depth + 1) + escapeXmlText(textContent));
+    }
+    childKeys.forEach(k => {
+      const v = value[k];
+      // For arrays at this position: use either user "item" name OR the key as plural→singular guess
+      let childName = k;
+      // If the value is an array, each element uses the key as element name (common convention)
+      // unless key is plural and user prefers configured item name; we'll use the key as-is.
+      const sub = toXmlLines(v, childName, depth + 1, opts);
+      sub.forEach(l => out.push(l));
+    });
+    out.push(pad + '</' + safeName + '>');
+    return out;
+  }
+
+  function jsonToXml(jsonObj, opts) {
+    const lines = [];
+    if (opts.decl) lines.push('<?xml version="1.0" encoding="UTF-8"?>');
+
+    // If top-level is array, wrap in root with item children
+    if (Array.isArray(jsonObj)) {
+      lines.push('<' + sanitizeName(opts.root) + '>');
+      jsonObj.forEach(v => {
+        toXmlLines(v, opts.item, 1, opts).forEach(l => lines.push(l));
+      });
+      lines.push('</' + sanitizeName(opts.root) + '>');
+    }
+    // If top-level is single-key object, use that key as root
+    else if (jsonObj && typeof jsonObj === 'object' && !Array.isArray(jsonObj)) {
+      const ks = Object.keys(jsonObj);
+      if (ks.length === 1 && typeof jsonObj[ks[0]] === 'object' && jsonObj[ks[0]] !== null) {
+        toXmlLines(jsonObj[ks[0]], ks[0], 0, opts).forEach(l => lines.push(l));
+      } else {
+        toXmlLines(jsonObj, opts.root, 0, opts).forEach(l => lines.push(l));
+      }
+    }
+    // Top-level primitive
+    else {
+      toXmlLines(jsonObj, opts.root, 0, opts).forEach(l => lines.push(l));
+    }
+    return lines.join('\n');
+  }
+
+  /* ---------- XML Syntax Highlighter ---------- */
+  function highlightXml(text) {
+    let h = escapeHtml(text);
+    h = h.replace(/(&lt;\?[\s\S]*?\?&gt;)/g, '<span class="xml-bracket">$1</span>');
+    h = h.replace(/(&lt;!$$CDATA$$[\s\S]*?$$$$&gt;)/g, '<span class="xml-value">$1</span>');
+    h = h.replace(/(&lt;\/?)([a-zA-Z_][\w:.-]*)((?:\s+[^&]*?)?)(\/?&gt;)/g,
+      function(m, lt, name, attrs, gt, off, full) {
+        const before = full.substring(Math.max(0, off - 30), off);
+        if (/<span class="xml-(value|bracket)">[^<]*$/.test(before)) return m;
+        const aHtml = attrs.replace(/([a-zA-Z_:][\w:.-]*)\s*=\s*(&quot;[\s\S]*?&quot;)/g,
+          '<span class="xml-attr">$1</span>=<span class="xml-value">$2</span>');
+        return '<span class="xml-bracket">' + lt + '</span>' +
+               '<span class="xml-tag">' + name + '</span>' +
+               aHtml +
+               '<span class="xml-bracket">' + gt + '</span>';
+      });
+    return h;
+  }
+
+  /* ---------- Actions ---------- */
+  function convert() {
+    const raw = inputEl.value.trim();
+    if (!raw) { showStatus('❌ Input is empty.', false); return; }
+    let parsed;
+    try { parsed = JSON.parse(raw); }
+    catch (err) {
+      inputWrap.classList.add('invalid');
+      outputEl.innerHTML = '<div class="error-block">❌ Invalid JSON: ' + escapeHtml(err.message) + '</div>';
+      updateLineNumbers(outputLines, '');
+      outputCount.textContent = '0 lines';
+      showStatus('❌ Invalid JSON', false);
+      return;
+    }
+    inputWrap.classList.remove('invalid');
+    try {
+      const opts = getOpts();
+      const xml = jsonToXml(parsed, opts);
+      window._xmlOutput = xml;
+      if (opts.highlight) outputEl.innerHTML = highlightXml(xml);
+      else outputEl.textContent = xml;
+      updateLineNumbers(outputLines, xml);
+      const lc = xml.split('\n').length;
+      outputCount.textContent = lc + (lc === 1 ? ' line' : ' lines');
+      showStatus('✅ Converted! ' + lc + ' lines, ' + xml.length + ' chars.', true);
+    } catch (e) {
+      outputEl.innerHTML = '<div class="error-block">❌ ' + escapeHtml(e.message) + '</div>';
+      showStatus('❌ ' + e.message, false);
+    }
+  }
+
+  function copyOutput(btn) {
+    const text = window._xmlOutput || '';
+    if (!text) { showStatus('Nothing to copy.', false); return; }
+    const done = () => showStatus('📋 Copied!', true);
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(done).catch(fallback);
+    else fallback();
+    function fallback() {
+      const t = document.createElement('textarea');
+      t.value = text; t.style.position='fixed'; t.style.opacity='0';
+      document.body.appendChild(t); t.select();
+      try { document.execCommand('copy'); done(); } catch(e){}
+      document.body.removeChild(t);
+    }
+  }
+
+  function download() {
+    const text = window._xmlOutput || '';
+    if (!text) { showStatus('Nothing to download.', false); return; }
+    const blob = new Blob([text], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'converted.xml';
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+  }
+
+  function loadSample() {
+    inputEl.value = JSON.stringify({
+      "@version": "1.0",
+      "company": {
+        "@id": "C001",
+        "name": "Acme Corp",
+        "founded": 1995,
+        "active": true,
+        "employees": [
+          { "@id": "E1", "name": "Alice", "role": "Engineer" },
+          { "@id": "E2", "name": "Bob", "role": "Manager" }
+        ],
+        "address": {
+          "street": "123 Main St",
+          "city": "Springfield",
+          "#text": "Notes about the address"
+        }
+      }
+    }, null, 2);
+    onInput();
+    convert();
+  }
+
+  function clearAll() {
+    inputEl.value = '';
+    outputEl.innerHTML = '';
+    window._xmlOutput = '';
+    onInput();
+    updateLineNumbers(outputLines, '');
+    outputCount.textContent = '0 lines';
+    statusEl.style.display = 'none';
+    inputWrap.classList.remove('invalid');
+  }
+
+  function onInput() {
+    updateLineNumbers(inputLines, inputEl.value);
+    updateInputCount();
+  }
+
+  /* ---------- Event listeners ---------- */
+  document.getElementById('btnConvert').addEventListener('click', convert);
+  document.getElementById('btnCopy').addEventListener('click', e => copyOutput(e.target));
+  document.getElementById('btnCopy2').addEventListener('click', e => copyOutput(e.target));
+  document.getElementById('btnDownload').addEventListener('click', download);
+  document.getElementById('btnSample').addEventListener('click', loadSample);
+  document.getElementById('btnClear').addEventListener('click', clearAll);
+
+  inputEl.addEventListener('input', onInput);
+  inputEl.addEventListener('scroll', () => syncScroll(inputEl, inputLines));
+  outputEl.addEventListener('scroll', () => syncScroll(outputEl, outputLines));
+
+  outputEl.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+      e.preventDefault();
+      const r = document.createRange(); r.selectNodeContents(outputEl);
+      const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+    }
+  });
+
+  onInput();
+  updateLineNumbers(outputLines, '');
+});
+</script>
+</body>
+</html>

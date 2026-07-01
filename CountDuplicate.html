@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Count Duplicates in a List Online Tool</title>
+  <!-- Favicon: stacked list rows with a count badge (×3) -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='6' y='8' width='44' height='48' rx='6' fill='%232563eb'/><g fill='white'><circle cx='15' cy='20' r='2.5'/><rect x='22' y='18' width='22' height='4' rx='1.5'/><circle cx='15' cy='32' r='2.5'/><rect x='22' y='30' width='22' height='4' rx='1.5'/><circle cx='15' cy='44' r='2.5'/><rect x='22' y='42' width='22' height='4' rx='1.5'/></g><circle cx='50' cy='48' r='13' fill='%23dc2626' stroke='white' stroke-width='2.5'/><text x='50' y='53' font-family='Segoe UI, Arial, sans-serif' font-size='14' font-weight='700' fill='white' text-anchor='middle'>×3</text></svg>" />
+<link rel="alternate icon" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect x='6' y='8' width='44' height='48' rx='6' fill='%232563eb'/><circle cx='50' cy='48' r='13' fill='%23dc2626'/></svg>" />
+  <style>
+    :root {
+      --bg: #f0f2f5;
+      --bg-gradient: linear-gradient(135deg, #f0f2f5 0%, #e6e9f0 100%);
+      --card-bg: #ffffff;
+      --text: #1a1a2e;
+      --text-muted: #666;
+      --hint: #999;
+      --border: #e5e7eb;
+      --border-strong: #ddd;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --danger: #dc2626;
+      --success: #059669;
+      --success-hover: #047857;
+      --empty: #16a34a;
+      --gutter-bg: #f6f8fa;
+      --gutter-text: #8b949e;
+      --gutter-border: #d0d7de;
+      --switch-off: #cbd5e1;
+      --shadow: 0 4px 20px rgba(0,0,0,0.06);
+      --shadow-hover: 0 6px 24px rgba(0,0,0,0.10);
+    }
+    [data-theme="dark"] {
+      --bg: #0f172a;
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      --card-bg: #1e293b;
+      --text: #f1f5f9;
+      --text-muted: #cbd5e1;
+      --hint: #94a3b8;
+      --border: #334155;
+      --border-strong: #475569;
+      --primary: #3b82f6;
+      --primary-hover: #60a5fa;
+      --danger: #f87171;
+      --success: #10b981;
+      --success-hover: #059669;
+      --empty: #4ade80;
+      --gutter-bg: #161f31;
+      --gutter-text: #6e7681;
+      --gutter-border: #30363d;
+      --switch-off: #475569;
+      --shadow: 0 4px 20px rgba(0,0,0,0.4);
+      --shadow-hover: 0 6px 24px rgba(0,0,0,0.5);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: var(--bg-gradient);
+      min-height: 100vh;
+      padding: 30px 20px 80px;
+      color: var(--text);
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    .container { max-width: 1500px; margin: 0 auto; }
+    h1 {
+      text-align: center;
+      margin-bottom: 8px;
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(90deg, var(--primary), var(--danger));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .subtitle {
+      text-align: center;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      font-size: 0.95rem;
+    }
+    .top-actions {
+      position: fixed;
+      top: 16px; right: 16px;
+      display: flex; gap: 8px;
+      z-index: 100;
+    }
+    .icon-btn {
+      background: var(--card-bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.2rem;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--shadow);
+      transition: transform 0.2s, box-shadow 0.2s;
+      padding: 0;
+    }
+    .icon-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+
+    /* ---------- Options bar (centered top) ---------- */
+    .options-bar {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      background: var(--card-bg);
+      padding: 14px 22px;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      margin: 0 auto 16px;
+      max-width: fit-content;
+    }
+    .toggle-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: var(--switch-off);
+      transition: 0.3s;
+      border-radius: 22px;
+    }
+    .slider::before {
+      content: "";
+      position: absolute;
+      height: 16px; width: 16px;
+      left: 3px; bottom: 3px;
+      background: #fff;
+      transition: 0.3s;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .switch input:checked + .slider { background: var(--primary); }
+    .switch input:checked + .slider::before { transform: translateX(18px); }
+    .toggle-icon { font-size: 1rem; }
+
+    .opt-select {
+      font-size: 0.9em;
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border-strong);
+      background: var(--card-bg);
+      color: var(--text);
+      font-family: inherit;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .opt-select:focus { border-color: var(--primary); }
+
+    .btn-row {
+      text-align: center;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    button.primary-btn,
+    button.secondary-btn {
+      color: #fff; border: none;
+      padding: 12px 36px;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+      box-shadow: var(--shadow);
+    }
+    .primary-btn { background: var(--primary); }
+    .primary-btn:hover { background: var(--primary-hover); box-shadow: var(--shadow-hover); }
+    .secondary-btn { background: var(--text-muted); }
+    .secondary-btn:hover { opacity: 0.85; }
+    button:active { transform: scale(0.97); }
+
+    /* ---------- Side-by-side grid ---------- */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel {
+      display: flex;
+      flex-direction: column;
+      background: var(--card-bg);
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      transition: background 0.3s, box-shadow 0.2s;
+      min-width: 0;
+    }
+    .panel:hover { box-shadow: var(--shadow-hover); }
+
+    .panel-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px; flex-wrap: wrap; gap: 8px;
+    }
+    .panel-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+      flex: 1;
+    }
+    .panel-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .panel-title.readonly { cursor: default; }
+    .title-input {
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 2px 6px;
+      border: 2px solid var(--primary);
+      border-radius: 4px;
+      background: var(--card-bg);
+      color: var(--text);
+      font-family: inherit;
+      outline: none;
+      width: 100%;
+      min-width: 60px;
+    }
+    .edit-icon {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: background 0.15s, color 0.15s;
+      opacity: 0.6;
+    }
+    .edit-icon:hover {
+      background: var(--bg);
+      color: var(--text);
+      opacity: 1;
+    }
+    .label-1 { color: var(--primary); }
+    .code-box {
+      display: flex;
+      border: 2px solid var(--border-strong);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--card-bg);
+      transition: border-color 0.2s;
+      min-height: 300px;
+    }
+    .code-box:focus-within { border-color: var(--primary); }
+    .gutter {
+      flex: 0 0 auto;
+      min-width: 42px;
+      padding: 12px 8px 12px 10px;
+      background: var(--gutter-bg);
+      color: var(--gutter-text);
+      border-right: 1px solid var(--gutter-border);
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      text-align: right;
+      user-select: none;
+      pointer-events: none;
+      white-space: pre;
+      overflow: hidden;
+      transition: background 0.3s, color 0.3s;
+    }
+    .code-content { flex: 1; min-width: 0; overflow: hidden; }
+    textarea.code-input {
+      width: 100%;
+      min-height: 296px;
+      padding: 12px;
+      border: none;
+      background: transparent;
+      color: var(--text);
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      resize: none;
+      outline: none;
+      overflow: hidden;
+      white-space: pre;
+      display: block;
+    }
+    .result-content {
+      padding: 12px;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      color: var(--text);
+      min-height: 296px;
+      overflow: hidden;
+    }
+    .result-table {
+      border-collapse: collapse;
+      width: 100%;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    .result-table th, .result-table td {
+      padding: 6px 8px;
+      border-bottom: 1px solid var(--border-strong);
+      background: var(--card-bg);
+      text-align: left;
+      white-space: pre;
+    }
+    .result-table th {
+      background: var(--gutter-bg);
+      color: var(--gutter-text);
+      font-weight: 600;
+      border-bottom: 2px solid var(--primary);
+      user-select: none;
+    }
+    .result-table tr:hover td {
+      background: rgba(37, 99, 235, 0.06);
+    }
+    .empty-msg {
+      color: var(--empty);
+      font-style: italic;
+      white-space: normal;
+      display: block;
+      padding: 4px 6px;
+    }
+    .hint { font-size: 0.75rem; color: var(--hint); margin-top: 6px; }
+    .badge {
+      background: var(--primary); color: #fff;
+      border-radius: 20px;
+      padding: 3px 10px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .copy-btn {
+      background: var(--success); color: #fff;
+      border: none;
+      padding: 4px 12px;
+      font-size: 0.78rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .copy-btn:hover { background: var(--success-hover); }
+    .download-btn {
+      background: var(--primary); color: #fff;
+      border: none;
+      padding: 4px 12px;
+      font-size: 0.78rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .download-btn:hover { background: var(--primary-hover); }
+    #scroll-top {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--primary); color: #fff;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-weight: 600;
+      box-shadow: var(--shadow-hover);
+      opacity: 0; visibility: hidden;
+      transform: translateY(20px);
+      transition: opacity 0.3s, transform 0.3s, visibility 0.3s, background 0.2s;
+      z-index: 99;
+      font-size: 0.9rem;
+    }
+    #scroll-top.show { opacity: 1; visibility: visible; transform: translateY(0); }
+    #scroll-top:hover { background: var(--primary-hover); }
+    @media (max-width: 1000px) { .grid { grid-template-columns: 1fr; } }
+    @media (max-width: 700px)  { h1 { font-size: 1.6rem; } }
+  </style>
+</head>
+<body>
+
+<div class="top-actions">
+  <button class="icon-btn" id="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle theme">🌙</button>
+</div>
+
+<div class="container" id="top">
+  <h1>Count Duplicates in a List Online Tool</h1>
+  <p class="subtitle">
+    This online utility quickly aggregates the lines pasted in the text box and shows you count of occurrences of each value.<br>
+    Use this to quickly aggregate the values to find duplicate lines, or to count the number of repeats.<br>
+    <span style="color:var(--hint);font-size:0.85em;">All processing is secure and client-side; nothing leaves your browser.</span>
+  </p>
+
+  <!-- Options/Filters at top center -->
+  <div class="options-bar">
+    <label class="toggle-wrap" title="When ON, 'Apple' and 'apple' are counted separately">
+      <span class="toggle-icon">🔠</span>
+      <span>Case-sensitive</span>
+      <span class="switch">
+        <input type="checkbox" id="opt-case" onchange="onOptionsChange()">
+        <span class="slider"></span>
+      </span>
+    </label>
+    <label class="toggle-wrap" title="When ON, blank lines are counted as values">
+      <span class="toggle-icon">␣</span>
+      <span>Include blank lines</span>
+      <span class="switch">
+        <input type="checkbox" id="opt-blank" onchange="onOptionsChange()">
+        <span class="slider"></span>
+      </span>
+    </label>
+    <label class="toggle-wrap" title="Sort output by count or value">
+      <span class="toggle-icon">↕️</span>
+      <span>Sort By</span>
+      <select id="opt-sort" class="opt-select" onchange="onOptionsChange()">
+        <option value="count">Count</option>
+        <option value="value">Value</option>
+      </select>
+    </label>
+    <label class="toggle-wrap" title="Output format">
+      <span class="toggle-icon">📝</span>
+      <span>Line Format</span>
+      <select id="opt-format" class="opt-select" onchange="onOptionsChange()">
+        <option value="text">Text</option>
+        <option value="csv">CSV</option>
+        <option value="tab">Tab</option>
+      </select>
+    </label>
+    <label class="toggle-wrap" title="Include counts column">
+      <span class="toggle-icon">#️⃣</span>
+      <span>Include Counts</span>
+      <span class="switch">
+        <input type="checkbox" id="opt-countcol" checked onchange="onOptionsChange()">
+        <span class="slider"></span>
+      </span>
+    </label>
+    <label class="toggle-wrap" title="Show all values, or only duplicates">
+      <span class="toggle-icon">🔁</span>
+      <span>Values</span>
+      <select id="opt-values" class="opt-select" onchange="onOptionsChange()">
+        <option value="all">All</option>
+        <option value="dupes">Duplicates Only</option>
+      </select>
+    </label>
+  </div>
+
+  <!-- Action buttons -->
+  <div class="btn-row">
+    <button class="primary-btn" onclick="showResults()">Show Results</button>
+    <button class="secondary-btn" onclick="clearInput()">Clear Input</button>
+    <button class="secondary-btn" onclick="restoreInput()">Restore Input</button>
+  </div>
+
+  <!-- Side-by-side: Input | Results -->
+  <div class="grid">
+    <!-- Input panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title-wrap">
+          <span class="panel-title label-1" id="input-title" onclick="startEditTitle()" title="Click to rename">Paste Your Input Text</span>
+          <button class="edit-icon" onclick="startEditTitle()" title="Rename input" aria-label="Rename input">✏️</button>
+        </div>
+        <span class="badge" id="input-count">0 lines</span>
+      </div>
+      <div class="code-box">
+        <div class="gutter" id="input-gutter">1</div>
+        <div class="code-content">
+          <textarea id="input" class="code-input"
+            placeholder="Paste or type your list here, one value per line"
+            spellcheck="false"
+            oninput="onInputChange()"></textarea>
+        </div>
+      </div>
+      <p class="hint" id="input-hint">Blank lines ignored. Case-insensitive.</p>
+    </div>
+
+    <!-- Result panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title label-1 readonly" id="result-title">Results</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <button class="copy-btn" onclick="copyResults(this)" title="Copy results">📋 Copy</button>
+          <button class="download-btn" onclick="downloadResults()" title="Download results">⬇️ Download</button>
+        </div>
+      </div>
+      <div class="result-content" id="result-box">
+        <span class="empty-msg">-- the results will appear here after you click the 'Show Results' button above --</span>
+      </div>
+      <p class="hint" id="result-hint">
+        <span id="stat-lines">Total lines: 0.</span>
+        <span id="stat-unique">Unique values: 0.</span>
+        <span id="stat-dupes">Duplicates: 0.</span>
+      </p>
+    </div>
+  </div>
+</div>
+
+<button id="scroll-top" onclick="scrollToTop()" title="Scroll to top">↑ Top</button>
+
+<script>
+  // Theme
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.getElementById('theme-toggle').textContent = theme === 'dark' ? '☀️' : '🌙';
+  }
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    const next = current === 'light' ? 'dark' : 'light';
+    applyTheme(next);
+    try { localStorage.setItem('countDupTheme', next); } catch (e) {}
+  }
+  (function initTheme() {
+    let saved = 'light';
+    try { saved = localStorage.getItem('countDupTheme') || 'light'; } catch (e) {}
+    applyTheme(saved);
+  })();
+
+  // Editable input title
+  const DEFAULT_INPUT_TITLE = "Paste Your Input Text";
+  function startEditTitle() {
+    const titleEl = document.getElementById('input-title');
+    if (!titleEl || titleEl.tagName === 'INPUT') return;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'input-title';
+    input.className = 'title-input';
+    input.value = titleEl.textContent;
+    input.maxLength = 40;
+    input.setAttribute('aria-label', 'Rename input');
+    titleEl.replaceWith(input);
+    input.focus();
+    input.select();
+    let finalized = false;
+    const finalize = (commit) => {
+      if (finalized) return;
+      finalized = true;
+      const newName = commit ? input.value.trim() : DEFAULT_INPUT_TITLE;
+      const span = document.createElement('span');
+      span.className = 'panel-title label-1';
+      span.id = 'input-title';
+      span.title = "Click to rename";
+      span.textContent = newName.length ? newName : DEFAULT_INPUT_TITLE;
+      span.onclick = startEditTitle;
+      input.replaceWith(span);
+      document.getElementById('result-title').textContent = "Results for: " + span.textContent;
+    };
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); finalize(true); }
+      else if (e.key === 'Escape') { e.preventDefault(); finalize(false); }
+    });
+    input.addEventListener('blur', () => finalize(true));
+  }
+
+  // Input gutter/line numbers
+  function updateGutter() {
+    const ta = document.getElementById('input');
+    const gutter = document.getElementById('input-gutter');
+    const lines = ta.value.split('\n').length || 1;
+    let nums = '';
+    for (let i = 1; i <= lines; i++) nums += i + '\n';
+    gutter.textContent = nums.replace(/\n$/, '');
+    autoGrow(ta);
+  }
+  function autoGrow(ta) {
+    ta.style.height = 'auto';
+    ta.style.height = Math.max(296, ta.scrollHeight) + 'px';
+    document.getElementById('input-gutter').style.minHeight = ta.style.height;
+  }
+  function onInputChange() {
+    updateGutter();
+    updateInputCount();
+    saveInput();
+  }
+  function updateInputCount() {
+    const ta = document.getElementById('input');
+    const opts = getOptions();
+    const items = parseList(ta.value, opts);
+    document.getElementById('input-count').textContent = items.length + (items.length === 1 ? ' line' : ' lines');
+  }
+  function saveInput() {
+    try { localStorage.setItem('countDupInput', document.getElementById('input').value); } catch (e) {}
+  }
+  function restoreInput() {
+    try {
+      const saved = localStorage.getItem('countDupInput');
+      if (typeof saved === 'string') {
+        document.getElementById('input').value = saved;
+        onInputChange();
+      }
+    } catch (e) {}
+  }
+  function clearInput() {
+    document.getElementById('input').value = '';
+    onInputChange();
+    document.getElementById('result-box').innerHTML =
+      "<span class='empty-msg'>-- the results will appear here after you click the 'Show Results' button above --</span>";
+    document.getElementById('stat-lines').textContent = "Total lines: 0.";
+    document.getElementById('stat-unique').textContent = "Unique values: 0.";
+    document.getElementById('stat-dupes').textContent = "Duplicates: 0.";
+  }
+
+  // Options
+  function getOptions() {
+    return {
+      caseSensitive: document.getElementById('opt-case').checked,
+      includeBlank:  document.getElementById('opt-blank').checked,
+      sort: document.getElementById('opt-sort').value,
+      format: document.getElementById('opt-format').value,
+      countcol: document.getElementById('opt-countcol').checked,
+      values: document.getElementById('opt-values').value
+    };
+  }
+  function onOptionsChange() {
+    const opts = getOptions();
+    const blankPart = opts.includeBlank ? 'Blank lines included.' : 'Blank lines ignored.';
+    const casePart  = opts.caseSensitive ? 'Case-sensitive.' : 'Case-insensitive.';
+    document.getElementById('input-hint').textContent = blankPart + " " + casePart;
+    updateInputCount();
+  }
+
+  // Parse input
+  function parseList(text, opts) {
+    const lines = text.split('\n').map(l => l.replace(/\r$/, ''));
+    if (opts.includeBlank) {
+      if (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+      return lines;
+    }
+    return lines.map(l => l.trim()).filter(l => l.length > 0);
+  }
+  function keyOf(item, opts) {
+    const v = opts.includeBlank ? item : item.trim();
+    return opts.caseSensitive ? v : v.toLowerCase();
+  }
+
+  // Show Results
+  function showResults() {
+    const opts = getOptions();
+    const items = parseList(document.getElementById('input').value, opts);
+    const counts = {};
+    items.forEach(item => {
+      const key = keyOf(item, opts);
+      counts[key] = counts[key] ? counts[key] + 1 : 1;
+    });
+    const valueMap = {};
+    items.forEach(item => {
+      const key = keyOf(item, opts);
+      if (!valueMap[key]) valueMap[key] = item;
+    });
+    let resultArr = Object.keys(counts).map(key => ({
+      value: valueMap[key],
+      count: counts[key]
+    }));
+    if (opts.values === 'dupes') resultArr = resultArr.filter(r => r.count > 1);
+    if (opts.sort === 'count')
+      resultArr.sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
+    else
+      resultArr.sort((a, b) => a.value.localeCompare(b.value));
+    const format = opts.format;
+    const includeCounts = opts.countcol;
+    let output = "";
+    if (resultArr.length === 0) {
+      document.getElementById('result-box').innerHTML =
+        "<span class='empty-msg'>No values found.</span>";
+    } else if (format === 'text') {
+      output = resultArr.map(r => includeCounts ? r.value + " (" + r.count + ")" : r.value).join('\n');
+      document.getElementById('result-box').innerHTML =
+        "<pre style='margin:0;white-space:pre-wrap;word-break:break-word;'>" + escapeHtml(output) + "</pre>";
+    } else {
+      let sep = format === 'csv' ? ',' : '\t';
+      let header = includeCounts ? "Value" + sep + "Count" : "Value";
+      output = header + "\n" +
+        resultArr.map(r => includeCounts ? '"' + r.value.replace(/"/g, '""') + '"' + sep + r.count : '"' + r.value.replace(/"/g, '""') + '"').join('\n');
+      let html = "<table class='result-table'><thead><tr>";
+      html += "<th>#</th><th>Value</th>";
+      if (includeCounts) html += "<th>Count</th>";
+      html += "</tr></thead><tbody>";
+      resultArr.forEach((r, i) => {
+        html += "<tr><td style='color:var(--gutter-text);user-select:none;'>" + (i+1) + "</td>";
+        html += "<td>" + escapeHtml(r.value) + "</td>";
+        if (includeCounts) html += "<td>" + r.count + "</td>";
+        html += "</tr>";
+      });
+      html += "</tbody></table>";
+      document.getElementById('result-box').innerHTML = html;
+    }
+    document.getElementById('stat-lines').textContent = "Total lines: " + items.length + ".";
+    document.getElementById('stat-unique').textContent = "Unique values: " + Object.keys(counts).length + ".";
+    document.getElementById('stat-dupes').textContent = "Duplicates: " + Object.values(counts).filter(c => c > 1).length + ".";
+    window._countDupResult = output;
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, ch => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    })[ch]);
+  }
+
+  // Copy/Download
+  function copyResults(btn) {
+    const text = window._countDupResult || "";
+    if (!text) {
+      const original = btn.textContent;
+      btn.textContent = "Nothing to copy";
+      setTimeout(() => btn.textContent = original, 1500);
+      return;
+    }
+    const done = () => {
+      const original = btn.textContent;
+      btn.textContent = "Copied!";
+      setTimeout(() => btn.textContent = original, 1800);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText)
+      navigator.clipboard.writeText(text).then(done).catch(fallbackCopy);
+    else
+      fallbackCopy();
+    function fallbackCopy() {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); done(); } catch (e) {}
+      document.body.removeChild(ta);
+    }
+  }
+  function downloadResults() {
+    const text = window._countDupResult || "";
+    if (!text) return;
+    const format = document.getElementById('opt-format').value;
+    let ext = format === 'csv' ? 'csv' : format === 'tab' ? 'txt' : 'txt';
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = "duplicates." + ext;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 100);
+  }
+
+  // Scroll to top
+  function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  window.addEventListener('scroll', () => {
+    const btn = document.getElementById('scroll-top');
+    if (window.scrollY > 300) btn.classList.add('show');
+    else btn.classList.remove('show');
+  });
+
+  // Init
+  window.addEventListener('load', () => {
+    try {
+      const saved = localStorage.getItem('countDupInput');
+      if (typeof saved === 'string') {
+        document.getElementById('input').value = saved;
+      }
+    } catch (e) {}
+    updateGutter();
+    updateInputCount();
+    onOptionsChange();
+    document.getElementById('result-title').textContent = "Results for: " + document.getElementById('input-title').textContent;
+  });
+</script>
+</body>
+</html>

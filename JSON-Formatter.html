@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>JSON Beautifier & Validator</title>
+
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%234f8cff'/><stop offset='1' stop-color='%23764ba2'/></linearGradient></defs><rect width='64' height='64' rx='14' fill='url(%23g)'/><text x='14' y='44' font-family='Consolas,monospace' font-size='34' font-weight='bold' fill='white'>{</text><circle cx='32' cy='28' r='2.5' fill='%23ffd966'/><circle cx='32' cy='36' r='2.5' fill='%2381e6a8'/><text x='38' y='44' font-family='Consolas,monospace' font-size='34' font-weight='bold' fill='white'>}</text></svg>" />
+
+<style>
+  :root {
+    --bg: #f0f2f5;
+    --bg-gradient: linear-gradient(135deg, #f0f2f5 0%, #e6e9f0 100%);
+    --card-bg: #ffffff;
+    --text: #1a1a2e;
+    --text-muted: #666;
+    --hint: #999;
+    --border: #e5e7eb;
+    --border-strong: #ddd;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --danger: #dc2626;
+    --success: #059669;
+    --success-hover: #047857;
+    --empty: #16a34a;
+    --gutter-bg: #f6f8fa;
+    --gutter-text: #8b949e;
+    --gutter-border: #d0d7de;
+    --switch-off: #cbd5e1;
+    --shadow: 0 4px 20px rgba(0,0,0,0.06);
+    --shadow-hover: 0 6px 24px rgba(0,0,0,0.10);
+
+    --json-key: #b45309;
+    --json-string: #059669;
+    --json-number: #db2777;
+    --json-boolean: #7c3aed;
+    --json-null: #dc2626;
+
+    --error-bg: rgba(220, 38, 38, 0.08);
+    --error-border: #dc2626;
+    --error-text: #991b1b;
+  }
+  [data-theme="dark"] {
+    --bg: #0f172a;
+    --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    --card-bg: #1e293b;
+    --text: #f1f5f9;
+    --text-muted: #cbd5e1;
+    --hint: #94a3b8;
+    --border: #334155;
+    --border-strong: #475569;
+    --primary: #3b82f6;
+    --primary-hover: #60a5fa;
+    --danger: #f87171;
+    --success: #10b981;
+    --success-hover: #059669;
+    --empty: #4ade80;
+    --gutter-bg: #161f31;
+    --gutter-text: #6e7681;
+    --gutter-border: #30363d;
+    --switch-off: #475569;
+    --shadow: 0 4px 20px rgba(0,0,0,0.4);
+    --shadow-hover: 0 6px 24px rgba(0,0,0,0.5);
+
+    --json-key: #fbbf24;
+    --json-string: #4ade80;
+    --json-number: #f472b6;
+    --json-boolean: #c084fc;
+    --json-null: #f87171;
+
+    --error-bg: rgba(248, 113, 113, 0.12);
+    --error-border: #f87171;
+    --error-text: #fca5a5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: var(--bg-gradient);
+    padding: 20px;
+    color: var(--text);
+    transition: background 0.3s ease, color 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  .container {
+    max-width: 1700px;
+    margin: 0 auto;
+    width: 100%;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 4px;
+    font-size: 1.6rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--primary), var(--danger));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    flex-shrink: 0;
+  }
+  .subtitle {
+    text-align: center;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+  .top-actions {
+    position: fixed;
+    top: 16px; right: 16px;
+    display: flex; gap: 8px;
+    z-index: 100;
+  }
+  .icon-btn {
+    background: var(--card-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+    padding: 0;
+  }
+  .icon-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+
+  .options-bar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    background: var(--card-bg);
+    padding: 10px 18px;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    margin: 0 auto 10px;
+    max-width: fit-content;
+    flex-shrink: 0;
+  }
+  .toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.82rem;
+    color: var(--text);
+  }
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 34px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: var(--switch-off);
+    transition: 0.3s;
+    border-radius: 18px;
+  }
+  .slider::before {
+    content: "";
+    position: absolute;
+    height: 12px; width: 12px;
+    left: 3px; bottom: 3px;
+    background: #fff;
+    transition: 0.3s;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .switch input:checked + .slider { background: var(--primary); }
+  .switch input:checked + .slider::before { transform: translateX(16px); }
+  .toggle-icon { font-size: 0.9rem; }
+
+  .opt-select {
+    font-size: 0.82em;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border-strong);
+    background: var(--card-bg);
+    color: var(--text);
+    font-family: inherit;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .opt-select:focus { border-color: var(--primary); }
+
+  .btn-row {
+    text-align: center;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  button.primary-btn,
+  button.secondary-btn,
+  button.warn-btn,
+  button.violet-btn,
+  button.danger-btn {
+    color: #fff; border: none;
+    padding: 9px 22px;
+    font-size: 0.88rem;
+    border-radius: 7px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+    box-shadow: var(--shadow);
+  }
+  .primary-btn { background: var(--primary); }
+  .primary-btn:hover:not(:disabled) { background: var(--primary-hover); box-shadow: var(--shadow-hover); }
+  .secondary-btn { background: var(--text-muted); }
+  .secondary-btn:hover { opacity: 0.85; }
+  .warn-btn { background: var(--success); }
+  .warn-btn:hover { background: var(--success-hover); }
+  .violet-btn { background: #7c3aed; }
+  .violet-btn:hover { background: #6d28d9; }
+  .danger-btn { background: var(--danger); }
+  .danger-btn:hover { opacity: 0.9; }
+  button:active { transform: scale(0.97); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .status-row {
+    text-align: center;
+    margin-bottom: 8px;
+    min-height: 22px;
+    flex-shrink: 0;
+  }
+  .status {
+    display: none;
+    padding: 6px 14px;
+    border-radius: 7px;
+    font-size: 0.82rem;
+    font-family: 'Consolas', 'Courier New', monospace;
+    margin: 0 auto;
+    max-width: fit-content;
+  }
+  .status.error {
+    display: inline-block;
+    background: var(--error-bg);
+    color: var(--error-border);
+    border: 1px solid var(--error-border);
+  }
+  .status.ok {
+    display: inline-block;
+    background: rgba(5, 150, 105, 0.10);
+    color: var(--success);
+    border: 1px solid var(--success);
+  }
+
+  /* Grid fills available height */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .panel {
+    display: flex;
+    flex-direction: column;
+    background: var(--card-bg);
+    padding: 12px;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, box-shadow 0.2s;
+    min-width: 0;
+    min-height: 0;
+  }
+  .panel:hover { box-shadow: var(--shadow-hover); }
+
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px; flex-wrap: wrap; gap: 8px;
+    flex-shrink: 0;
+  }
+  .panel-title {
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: var(--primary);
+  }
+  .panel-title.label-2 { color: var(--danger); }
+
+  /* Code box fills the rest of the panel */
+  .code-box {
+    display: flex;
+    border: 2px solid var(--border-strong);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--card-bg);
+    transition: border-color 0.2s;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .code-box:focus-within { border-color: var(--primary); }
+  .code-box.invalid { border-color: var(--danger); box-shadow: 0 0 0 2px var(--error-bg); }
+
+  .gutter {
+    flex: 0 0 auto;
+    min-width: 45px;
+    padding: 12px 8px 12px 10px;
+    background: var(--gutter-bg);
+    color: var(--gutter-text);
+    border-right: 1px solid var(--gutter-border);
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    text-align: right;
+    user-select: none;
+    pointer-events: none;
+    white-space: pre;
+    overflow: hidden;
+    transition: background 0.3s, color 0.3s;
+  }
+  .gutter .err-line {
+    color: var(--danger);
+    font-weight: bold;
+    background: var(--error-bg);
+    display: inline-block;
+    width: 100%;
+  }
+  .code-content {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    overflow: hidden;
+  }
+
+  textarea.code-input,
+  .code-output {
+    width: 100%;
+    height: 100%;
+    padding: 12px;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    resize: none;
+    outline: none;
+    overflow: auto;
+    white-space: pre;
+    display: block;
+    tab-size: 2;
+    flex: 1 1 auto;
+  }
+  .code-output {
+    word-wrap: normal;
+  }
+  .code-output[contenteditable="false"] { user-select: text; cursor: text; }
+
+  /* JSON syntax highlighting */
+  .key      { color: var(--json-key); }
+  .string   { color: var(--json-string); }
+  .number   { color: var(--json-number); }
+  .boolean  { color: var(--json-boolean); font-weight: 600; }
+  .null     { color: var(--json-null); font-weight: 600; }
+
+  /* Error display */
+  .error-block {
+    padding: 14px;
+    color: var(--error-text);
+    background: var(--error-bg);
+    border-left: 3px solid var(--danger);
+    border-radius: 4px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    margin: 0;
+    width: 100%;
+  }
+  .error-block .err-title {
+    color: var(--danger);
+    font-weight: bold;
+    font-size: 0.92rem;
+    margin-bottom: 10px;
+    display: block;
+  }
+  .error-block .err-context {
+    background: var(--card-bg);
+    border: 1px solid var(--danger);
+    border-radius: 6px;
+    padding: 10px;
+    margin: 8px 0;
+    color: var(--text);
+    overflow-x: auto;
+  }
+  .error-block .err-pointer { color: var(--danger); font-weight: bold; }
+  .error-block .err-msg { margin-top: 10px; font-weight: bold; color: var(--danger); }
+
+  /* Tree view */
+  .tree {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    padding: 8px;
+  }
+  .tree ul { list-style: none; padding-left: 20px; margin: 0; border-left: 1px dashed var(--border-strong); }
+  .tree li { position: relative; padding: 2px 0; }
+  .tree .toggle {
+    cursor: pointer;
+    user-select: none;
+    display: inline-block;
+    width: 14px;
+    color: var(--text-muted);
+    font-weight: bold;
+  }
+  .tree .toggle:hover { color: var(--primary); }
+  .tree .collapsed > ul { display: none; }
+  .tree .count { color: var(--text-muted); font-style: italic; font-size: 0.75rem; margin-left: 4px; }
+
+  .badge {
+    background: var(--primary); color: #fff;
+    border-radius: 20px;
+    padding: 2px 9px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 1000px) {
+    .grid { grid-template-columns: 1fr; }
+    body { height: auto; min-height: 100vh; }
+    html, body { height: auto; }
+  }
+  @media (max-width: 700px) { h1 { font-size: 1.3rem; } }
+</style>
+</head>
+<body>
+
+<div class="top-actions">
+  <button class="icon-btn" id="theme-toggle" title="Toggle dark mode" aria-label="Toggle theme">🌙</button>
+</div>
+
+<div class="container" id="top">
+  <h1>JSON Beautifier &amp; Validator</h1>
+  <p class="subtitle">
+    Paste messy / escaped JSON → Beautify, Minify, or View as Tree.<br>
+    <span style="color:var(--hint);font-size:0.85em;">All processing happens locally in your browser. Nothing is uploaded.</span>
+  </p>
+
+  <!-- Cleanup option toggles -->
+  <div class="options-bar">
+    <label class="toggle-wrap" title="Remove escaped quotes (\\&quot; → &quot;)">
+      <span class="toggle-icon">"</span>
+      <span>Remove \\&quot;</span>
+      <span class="switch"><input type="checkbox" id="opt1" checked><span class="slider"></span></span>
+    </label>
+    <label class="toggle-wrap" title="Remove escaped newlines (\\n)">
+      <span class="toggle-icon">↵</span>
+      <span>Remove \\n</span>
+      <span class="switch"><input type="checkbox" id="opt2" checked><span class="slider"></span></span>
+    </label>
+    <label class="toggle-wrap" title="Remove escaped carriage returns (\\r)">
+      <span class="toggle-icon">⏎</span>
+      <span>Remove \\r</span>
+      <span class="switch"><input type="checkbox" id="opt3" checked><span class="slider"></span></span>
+    </label>
+    <label class="toggle-wrap" title="Fix &quot;{,}&quot; → &quot;{}&quot;">
+      <span class="toggle-icon">🔧</span>
+      <span>Fix {,} → {}</span>
+      <span class="switch"><input type="checkbox" id="opt4" checked><span class="slider"></span></span>
+    </label>
+    <label class="toggle-wrap" title="Recursively unescape nested JSON strings">
+      <span class="toggle-icon">🔓</span>
+      <span>Unescape nested JSON</span>
+      <span class="switch"><input type="checkbox" id="opt5"><span class="slider"></span></span>
+    </label>
+    <label class="toggle-wrap" title="Remove escaped tabs (\\t)">
+      <span class="toggle-icon">⇥</span>
+      <span>Remove \\t</span>
+      <span class="switch"><input type="checkbox" id="opt6"><span class="slider"></span></span>
+    </label>
+  </div>
+
+  <!-- Action buttons -->
+  <div class="btn-row">
+    <button class="primary-btn" id="btnBeautify">✨ Beautify</button>
+    <button class="violet-btn" id="btnMinify">🗜️ Minify</button>
+    <button class="warn-btn" id="btnCopy">📋 Copy Output</button>
+    <button class="secondary-btn" id="btnSample">📄 Load Sample</button>
+    <button class="danger-btn" id="btnClear">🗑️ Clear</button>
+  </div>
+
+  <!-- Status row -->
+  <div class="status-row">
+    <div id="status" class="status"></div>
+  </div>
+
+  <!-- Side-by-side: Input | Output -->
+  <div class="grid">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">📥 Input JSON</span>
+        <span class="badge" id="input-count">0 lines</span>
+      </div>
+      <div class="code-box" id="inputWrap">
+        <div class="gutter" id="inputLines">1</div>
+        <div class="code-content">
+          <textarea id="input" class="code-input"
+            placeholder="Paste your JSON here..."
+            spellcheck="false"></textarea>
+        </div>
+      </div>
+      <p class="hint">Supports messy or escaped JSON. Validates as you type.</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title label-2">📤 Beautified Output</span>
+        <select id="viewMode" class="opt-select">
+          <option value="code">📝 Code</option>
+          <option value="tree">🌲 Tree</option>
+        </select>
+      </div>
+      <div class="code-box" id="outputWrap">
+        <div class="gutter" id="outputLines">&nbsp;</div>
+        <div class="code-content">
+          <div id="output" class="code-output" contenteditable="false" tabindex="0"></div>
+        </div>
+      </div>
+      <p class="hint">Choose Code or Tree view. Click ▼/▶ to expand/collapse nodes in Tree view.</p>
+    </div>
+  </div>
+</div>
+
+<button id="scroll-top" title="Scroll to top">↑ Top</button>
+
+<script>
+/* ---------- Theme ---------- */
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'light' ? 'dark' : 'light';
+  applyTheme(next);
+  try { localStorage.setItem('jsonbeautifier-theme', next); } catch (e) {}
+}
+(function earlyTheme() {
+  let saved = 'light';
+  try { saved = localStorage.getItem('jsonbeautifier-theme') || 'light'; } catch (e) {}
+  document.documentElement.setAttribute('data-theme', saved);
+})();
+
+/* ---------- Scroll to top ---------- */
+window.addEventListener('scroll', () => {
+  const btn = document.getElementById('scroll-top');
+  if (!btn) return;
+  if (window.scrollY > 300) btn.classList.add('show');
+  else btn.classList.remove('show');
+});
+
+/* ============================================================
+   JSON BEAUTIFIER LOGIC (preserved exactly from original)
+   ============================================================ */
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('[JSON Beautifier] Script loaded ✅');
+
+  // Apply saved theme to button now that DOM is ready
+  let savedTheme = 'light';
+  try { savedTheme = localStorage.getItem('jsonbeautifier-theme') || 'light'; } catch (e) {}
+  applyTheme(savedTheme);
+
+  document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+  document.getElementById('scroll-top').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+  var SAMPLE = '{\n' +
+    '  "success": true,\n' +
+    '  "data": {\n' +
+    '    "userId": 1001,\n' +
+    '    "settings": "{\\"theme\\":\\"dark\\",\\"notifications\\":{\\"email\\":true,\\"sms\\":false}}",\n' +
+    '    "preferences": {\n' +
+    '      "language": "en-US",\n' +
+    '      "signature": "Regards,\\nJohn Doe\\r\\nSenior Engineer",\n' +
+    '      "escapedExample": "{\\"message\\":\\"Hello \\\\\\"World\\\\\\"\\",\\"path\\":\\"D:\\\\\\\\temp\\\\\\\\file.json\\"}"\n' +
+    '    }\n' +
+    '  },\n' +
+    '  "debugInfo": {\n' +
+    '    "rawRequest": "{\\"query\\":\\"SELECT * FROM users WHERE name = \\\\\\"John\\\\\\"\\"}",\n' +
+    '    "stackTrace": "Error occurred.\\n\\tat Service.process(Service.java:42)\\n\\tat Main.main(Main.java:10)"\n' +
+    '  }\n' +
+    '}';
+
+  var currentParsed = null;
+
+  // Get all elements once
+  var inputEl     = document.getElementById('input');
+  var inputLines  = document.getElementById('inputLines');
+  var outputEl    = document.getElementById('output');
+  var outputLines = document.getElementById('outputLines');
+  var statusEl    = document.getElementById('status');
+  var inputWrap   = document.getElementById('inputWrap');
+  var inputCount  = document.getElementById('input-count');
+  var btnBeautify = document.getElementById('btnBeautify');
+  var btnMinify   = document.getElementById('btnMinify');
+  var btnCopy     = document.getElementById('btnCopy');
+  var btnClear    = document.getElementById('btnClear');
+  var btnSample   = document.getElementById('btnSample');
+  var viewMode    = document.getElementById('viewMode');
+
+  function showStatus(msg, ok) {
+    if (ok === undefined) ok = true;
+    statusEl.textContent = msg;
+    statusEl.className = 'status ' + (ok ? 'ok' : 'error');
+    if (ok) setTimeout(function(){ statusEl.style.display='none'; statusEl.className='status'; }, 4000);
+  }
+  function hideStatus() {
+    statusEl.style.display = 'none';
+    statusEl.className = 'status';
+  }
+
+  function updateLineNumbers(linesId, text, errorLine) {
+    var el = document.getElementById(linesId);
+    var lines = (text || '').split('\n').length || 1;
+    var html = '';
+    for (var i = 1; i <= lines; i++) {
+      if (errorLine && i === errorLine) html += '<span class="err-line">' + i + '</span>\n';
+      else html += i + '\n';
+    }
+    el.innerHTML = html;
+  }
+  function updateInputCount() {
+    var text = inputEl.value;
+    var lines = text.length === 0 ? 0 : text.split('\n').length;
+    inputCount.textContent = lines + (lines === 1 ? ' line' : ' lines');
+  }
+  function syncScroll(editor, lines) { lines.scrollTop = editor.scrollTop; }
+
+  function applyCleanups(text) {
+    if (document.getElementById('opt1').checked) text = text.replace(/\\"/g, '"');
+    if (document.getElementById('opt2').checked) text = text.replace(/\\n/g, '');
+    if (document.getElementById('opt3').checked) text = text.replace(/\\r/g, '');
+    if (document.getElementById('opt6').checked) text = text.replace(/\\t/g, '');
+    if (document.getElementById('opt4').checked) {
+      text = text.replace(/\{\s*,\s*\}/g, '{}');
+      text = text.replace(/$$\s*,\s*$$/g, '[]');
+    }
+    return text;
+  }
+  function unescapeNestedJson(obj) {
+    if (typeof obj === 'string') {
+      var t = obj.trim();
+      if ((t.charAt(0) === '{' && t.charAt(t.length-1) === '}') ||
+          (t.charAt(0) === '[' && t.charAt(t.length-1) === ']')) {
+        try { return unescapeNestedJson(JSON.parse(t)); } catch(e) { return obj; }
+      }
+      return obj;
+    }
+    if (Array.isArray(obj)) return obj.map(unescapeNestedJson);
+    if (obj && typeof obj === 'object') {
+      var out = {};
+      for (var k in obj) out[k] = unescapeNestedJson(obj[k]);
+      return out;
+    }
+    return obj;
+  }
+  function escapeHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+  function syntaxHighlight(json) {
+    json = escapeHtml(json);
+
+    var BS = String.fromCharCode(92);
+    var stringPart = '"(?:' + BS + BS + '.|[^"' + BS + BS + '])*"(?:\\s*:)?';
+    var keywordPart = '\\b(?:true|false|null)\\b';
+    var numberPart = '-?\\d+(?:\\.\\d+)?(?:[eE][+\\-]?\\d+)?';
+
+    var pattern = new RegExp(stringPart + '|' + keywordPart + '|' + numberPart, 'g');
+
+    return json.replace(pattern, function (match) {
+      var cls = 'number';
+      if (/^"/.test(match)) {
+        cls = /:\s*$/.test(match) ? 'key' : 'string';
+      } else if (/^(true|false)$/.test(match)) {
+        cls = 'boolean';
+      } else if (/^null$/.test(match)) {
+        cls = 'null';
+      }
+      return '<span class="' + cls + '">' + match + '</span>';
+    });
+  }
+
+  function getErrorInfo(text, errorMessage) {
+    var line = null, column = null, position = null;
+    var posMatch = errorMessage.match(/position\s+(\d+)/i);
+    if (posMatch) {
+      position = parseInt(posMatch[1], 10);
+      var before = text.substring(0, position);
+      line = (before.match(/\n/g) || []).length + 1;
+      var lastNl = before.lastIndexOf('\n');
+      column = position - (lastNl + 1) + 1;
+    }
+    var lineMatch = errorMessage.match(/line\s+(\d+)/i);
+    var colMatch = errorMessage.match(/column\s+(\d+)/i);
+    if (lineMatch) line = parseInt(lineMatch[1], 10);
+    if (colMatch) column = parseInt(colMatch[1], 10);
+    var token = null;
+    var tokMatch = errorMessage.match(/Unexpected token\s+(['"]?)(.+?)\1(?:\s+in|\s|$)/i);
+    if (tokMatch) token = tokMatch[2];
+    return { line: line, column: column, position: position, token: token, raw: errorMessage };
+  }
+
+  function formatParseError(text, err) {
+    var info = getErrorInfo(text, err.message);
+    var lines = text.split('\n');
+    var header = 'Parse error';
+    if (info.line) header += ' on line ' + info.line;
+    header += ':';
+    var context = '';
+    if (info.line) {
+      var lineIdx = info.line - 1;
+      var prev = lineIdx > 0 ? lines[lineIdx - 1] : '';
+      var cur = lines[lineIdx] || '';
+      var next = lineIdx < lines.length - 1 ? lines[lineIdx + 1] : '';
+      var prevTrunc = prev.length > 30 ? '...' + prev.slice(-30) : prev;
+      var nextTrunc = next.length > 30 ? next.slice(0, 30) + '...' : next;
+      var col = info.column || (cur.length + 1);
+      var pointer = new Array(Math.max(0, col - 1) + 1).join('-') + '^';
+      context = escapeHtml(prevTrunc) + '\n' +
+                escapeHtml(cur) + '\n' +
+                '<span class="err-pointer">' + pointer + '</span>\n' +
+                escapeHtml(nextTrunc);
+    } else {
+      context = escapeHtml(text.substring(0, 200)) + (text.length > 200 ? '...' : '');
+    }
+    var friendly = err.message;
+    if (info.token) {
+      if (info.token === ',') friendly = "Expecting 'STRING', got ','";
+      else if (info.token === '}') friendly = "Unexpected '}'";
+      else if (info.token === ']') friendly = "Unexpected ']'";
+      else friendly = "Unexpected token '" + info.token + "'";
+    }
+    return {
+      line: info.line,
+      html: '<div class="error-block">' +
+        '<span class="err-title">❌ ' + escapeHtml(header) + '</span>' +
+        '<div class="err-context">' + context + '</div>' +
+        '<div class="err-msg">' + escapeHtml(friendly) + '</div>' +
+        '<div style="margin-top:10px; opacity:0.7; font-size:11px;">Original: ' + escapeHtml(err.message) + '</div>' +
+      '</div>'
+    };
+  }
+
+  function validateInput() {
+    var raw = inputEl.value;
+    if (!raw.trim()) {
+      inputWrap.classList.remove('invalid');
+      btnBeautify.disabled = true;
+      btnMinify.disabled = true;
+      hideStatus();
+      outputEl.innerHTML = '';
+      updateLineNumbers('outputLines', '');
+      currentParsed = null;
+      return false;
+    }
+    try {
+      JSON.parse(raw);
+      inputWrap.classList.remove('invalid');
+      btnBeautify.disabled = false;
+      btnMinify.disabled = false;
+      hideStatus();
+      return true;
+    } catch (e1) {
+      try {
+        JSON.parse(applyCleanups(raw));
+        inputWrap.classList.remove('invalid');
+        btnBeautify.disabled = false;
+        btnMinify.disabled = false;
+        hideStatus();
+        return true;
+      } catch (e2) {
+        inputWrap.classList.add('invalid');
+        btnBeautify.disabled = true;
+        btnMinify.disabled = true;
+        var errInfo = formatParseError(raw, e2);
+        outputEl.innerHTML = errInfo.html;
+        updateLineNumbers('inputLines', raw, errInfo.line);
+        updateLineNumbers('outputLines', '');
+        showStatus('❌ Invalid JSON — see error details on the right →', false);
+        currentParsed = null;
+        return false;
+      }
+    }
+  }
+
+  function tryParse() {
+    var raw = inputEl.value.trim();
+    if (!raw) throw new Error('Empty input');
+    var parsed;
+    try { parsed = JSON.parse(raw); }
+    catch (e) { parsed = JSON.parse(applyCleanups(raw)); }
+    if (document.getElementById('opt5').checked) parsed = unescapeNestedJson(parsed);
+    return parsed;
+  }
+
+  function beautify() {
+    console.log('[Beautify] clicked');
+    try {
+      currentParsed = tryParse();
+      viewMode.value = 'code';
+      renderOutput();
+      showStatus('✅ JSON beautified successfully!', true);
+    } catch (err) { showStatus('❌ ' + err.message, false); }
+  }
+  function minify() {
+    console.log('[Minify] clicked');
+    try {
+      currentParsed = tryParse();
+      var minified = JSON.stringify(currentParsed);
+      viewMode.value = 'code';
+      outputEl.innerHTML = syntaxHighlight(minified);
+      updateLineNumbers('outputLines', minified);
+      showStatus('🗜 JSON minified! (' + minified.length + ' chars)', true);
+    } catch (err) { showStatus('❌ ' + err.message, false); }
+  }
+
+  function renderOutput() {
+    if (currentParsed === null || currentParsed === undefined) {
+      try { currentParsed = tryParse(); } catch(e) { return; }
+    }
+    var mode = viewMode.value;
+    if (mode === 'code') {
+      var pretty = JSON.stringify(currentParsed, null, 2);
+      outputEl.innerHTML = syntaxHighlight(pretty);
+      updateLineNumbers('outputLines', pretty);
+      outputEl.style.whiteSpace = 'pre';
+    } else {
+      outputEl.innerHTML = '<div class="tree"><ul>' + buildTree(currentParsed) + '</ul></div>';
+      var lineCount = (outputEl.querySelectorAll('li').length || 1);
+      var lines = '';
+      for (var i=1;i<=lineCount;i++) lines += i + '\n';
+      outputLines.textContent = lines;
+      outputEl.style.whiteSpace = 'normal';
+      attachTreeToggles();
+    }
+  }
+
+  function buildTree(value, key) {
+    var keyHtml = key !== undefined ? '<span class="key">"' + escapeHtml(String(key)) + '"</span>: ' : '';
+    if (value === null) return '<li>' + keyHtml + '<span class="null">null</span></li>';
+    if (typeof value === 'boolean') return '<li>' + keyHtml + '<span class="boolean">' + value + '</span></li>';
+    if (typeof value === 'number') return '<li>' + keyHtml + '<span class="number">' + value + '</span></li>';
+    if (typeof value === 'string') return '<li>' + keyHtml + '<span class="string">"' + escapeHtml(value) + '"</span></li>';
+    if (Array.isArray(value)) {
+      if (value.length === 0) return '<li>' + keyHtml + '[]</li>';
+      var inner = '';
+      value.forEach(function(v, i){ inner += buildTree(v, i); });
+      return '<li><span class="toggle">▼</span>' + keyHtml + '[ <span class="count">' + value.length + ' items</span><ul>' + inner + '</ul>]</li>';
+    }
+    if (typeof value === 'object') {
+      var keys = Object.keys(value);
+      if (keys.length === 0) return '<li>' + keyHtml + '{}</li>';
+      var inner2 = '';
+      keys.forEach(function(k){ inner2 += buildTree(value[k], k); });
+      return '<li><span class="toggle">▼</span>' + keyHtml + '{ <span class="count">' + keys.length + ' keys</span><ul>' + inner2 + '</ul>}</li>';
+    }
+    return '<li>' + keyHtml + String(value) + '</li>';
+  }
+  function attachTreeToggles() {
+    var toggles = document.querySelectorAll('.tree .toggle');
+    for (var i = 0; i < toggles.length; i++) {
+      toggles[i].onclick = function(e) {
+        e.stopPropagation();
+        var li = this.parentElement;
+        li.classList.toggle('collapsed');
+        this.textContent = li.classList.contains('collapsed') ? '▶' : '▼';
+      };
+    }
+  }
+
+  function copyOutput() {
+    console.log('[Copy] clicked');
+    var text = outputEl.innerText;
+    if (!text) { showStatus('Nothing to copy.', false); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function(){
+        showStatus('📋 Copied!', true);
+      }).catch(function(err){
+        showStatus('❌ Copy failed: ' + err, false);
+      });
+    } else {
+      var ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); showStatus('📋 Copied!', true); }
+      catch(e) { showStatus('❌ Copy failed', false); }
+      document.body.removeChild(ta);
+    }
+  }
+  function clearAll() {
+    console.log('[Clear] clicked');
+    inputEl.value = '';
+    outputEl.innerHTML = '';
+    currentParsed = null;
+    updateLineNumbers('inputLines','');
+    updateLineNumbers('outputLines','');
+    updateInputCount();
+    validateInput();
+  }
+  function loadSample() {
+    console.log('[Sample] clicked');
+    inputEl.value = SAMPLE;
+    updateLineNumbers('inputLines', SAMPLE);
+    updateInputCount();
+    validateInput();
+    beautify();
+  }
+
+  // 🔌 Attach event listeners
+  btnBeautify.addEventListener('click', beautify);
+  btnMinify.addEventListener('click', minify);
+  btnCopy.addEventListener('click', copyOutput);
+  btnClear.addEventListener('click', clearAll);
+  btnSample.addEventListener('click', loadSample);
+  viewMode.addEventListener('change', renderOutput);
+
+  var validateTimer = null;
+  function scheduleValidate() {
+    clearTimeout(validateTimer);
+    validateTimer = setTimeout(function() {
+      updateLineNumbers('inputLines', inputEl.value);
+      updateInputCount();
+      validateInput();
+    }, 200);
+  }
+  inputEl.addEventListener('input', scheduleValidate);
+  inputEl.addEventListener('paste', function(){ setTimeout(scheduleValidate, 0); });
+  inputEl.addEventListener('cut', scheduleValidate);
+  inputEl.addEventListener('drop', function(){ setTimeout(scheduleValidate, 0); });
+
+  inputEl.addEventListener('scroll', function(){ syncScroll(inputEl, inputLines); });
+  outputEl.addEventListener('scroll', function(){ syncScroll(outputEl, outputLines); });
+
+  outputEl.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+      e.preventDefault();
+      var range = document.createRange();
+      range.selectNodeContents(outputEl);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+  });
+
+  validateInput();
+  updateLineNumbers('inputLines','');
+  updateLineNumbers('outputLines','');
+  updateInputCount();
+  console.log('[JSON Beautifier] Ready 🚀');
+});
+</script>
+</body>
+</html>

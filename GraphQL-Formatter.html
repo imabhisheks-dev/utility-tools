@@ -1,0 +1,1748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GraphQL Validator & Formatter</title>
+
+<!-- Favicon: GraphQL-inspired hexagon with pink-purple gradient -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%237c3aed'/><stop offset='1' stop-color='%234c1d95'/></linearGradient></defs><rect width='64' height='64' rx='14' fill='url(%23g)'/><g fill='none' stroke='white' stroke-width='2.5' stroke-linejoin='round'><polygon points='32,12 50,22 50,42 32,52 14,42 14,22'/><circle cx='32' cy='12' r='3.5' fill='white'/><circle cx='50' cy='22' r='3.5' fill='white'/><circle cx='50' cy='42' r='3.5' fill='white'/><circle cx='32' cy='52' r='3.5' fill='white'/><circle cx='14' cy='42' r='3.5' fill='white'/><circle cx='14' cy='22' r='3.5' fill='white'/><line x1='32' y1='12' x2='50' y2='42'/><line x1='50' y1='22' x2='32' y2='52'/><line x1='32' y1='12' x2='14' y2='42'/><line x1='14' y1='22' x2='50' y2='42'/><line x1='14' y1='22' x2='32' y2='52'/><line x1='50' y1='22' x2='14' y2='42'/></g></svg>" />
+
+<style>
+:root {
+  --bg: #f0f2f5;
+  --bg-gradient: linear-gradient(135deg, #f0f2f5 0%, #e6e9f0 100%);
+  --card-bg: #ffffff;
+  --text: #1a1a2e;
+  --text-muted: #666;
+  --hint: #999;
+  --border: #e5e7eb;
+  --border-strong: #ddd;
+  --primary: #7c3aed;
+  --primary-hover: #6d28d9;
+  --secondary: #4c1d95;
+  --danger: #dc2626;
+  --success: #059669;
+  --success-hover: #047857;
+  --gutter-bg: #f6f8fa;
+  --gutter-text: #8b949e;
+  --gutter-border: #d0d7de;
+  --switch-off: #cbd5e1;
+  --shadow: 0 4px 20px rgba(0,0,0,0.06);
+  --shadow-hover: 0 6px 24px rgba(0,0,0,0.10);
+
+  --gql-keyword: #7c3aed;
+  --gql-type: #5b21b6;
+  --gql-field: #2563eb;
+  --gql-string: #059669;
+  --gql-number: #db7600;
+  --gql-comment: #6b7280;
+  --gql-variable: #b45309;
+  --gql-directive: #6d28d9;
+  --gql-punctuation: #6b7280;
+  --gql-enum: #8b5cf6;
+
+  --error-bg: rgba(220, 38, 38, 0.10);
+}
+[data-theme="dark"] {
+  --bg: #0f172a;
+  --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  --card-bg: #1e293b;
+  --text: #f1f5f9;
+  --text-muted: #cbd5e1;
+  --hint: #94a3b8;
+  --border: #334155;
+  --border-strong: #475569;
+  --primary: #a78bfa;
+  --primary-hover: #c4b5fd;
+  --secondary: #c084fc;
+  --danger: #f87171;
+  --success: #10b981;
+  --success-hover: #059669;
+  --gutter-bg: #161f31;
+  --gutter-text: #6e7681;
+  --gutter-border: #30363d;
+  --switch-off: #475569;
+  --shadow: 0 4px 20px rgba(0,0,0,0.4);
+  --shadow-hover: 0 6px 24px rgba(0,0,0,0.5);
+
+  --gql-keyword: #a78bfa;
+  --gql-type: #c084fc;
+  --gql-field: #60a5fa;
+  --gql-string: #4ade80;
+  --gql-number: #fbbf24;
+  --gql-comment: #94a3b8;
+  --gql-variable: #f59e0b;
+  --gql-directive: #c4b5fd;
+  --gql-punctuation: #94a3b8;
+  --gql-enum: #d8b4fe;
+
+  --error-bg: rgba(248, 113, 113, 0.15);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  background: var(--bg-gradient);
+  padding: 20px;
+  color: var(--text);
+  transition: background 0.3s, color 0.3s;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+.container {
+  max-width: 1700px;
+  margin: 0 auto;
+  width: 100%;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+h1 {
+  text-align: center;
+  margin-bottom: 4px;
+  font-size: 1.6rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  flex-shrink: 0;
+}
+.subtitle {
+  text-align: center; color: var(--text-muted);
+  margin-bottom: 12px; font-size: 0.85rem;
+  flex-shrink: 0;
+}
+.top-actions {
+  position: fixed; top: 16px; right: 16px;
+  display: flex; gap: 8px; z-index: 100;
+}
+.icon-btn {
+  background: var(--card-bg); color: var(--text);
+  border: 1px solid var(--border);
+  width: 40px; height: 40px;
+  border-radius: 50%; cursor: pointer; font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.icon-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+
+.options-bar {
+  display: flex; justify-content: center; align-items: center;
+  gap: 16px; flex-wrap: wrap;
+  background: var(--card-bg);
+  padding: 10px 18px; border-radius: 10px;
+  box-shadow: var(--shadow);
+  margin: 0 auto 10px; max-width: fit-content;
+  flex-shrink: 0;
+}
+.toggle-wrap { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; font-size: 0.85rem; }
+.switch { position: relative; display: inline-block; width: 36px; height: 20px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; inset: 0; background: var(--switch-off); transition: 0.3s; border-radius: 20px; }
+.slider::before { content: ""; position: absolute; height: 14px; width: 14px; left: 3px; bottom: 3px; background: #fff; transition: 0.3s; border-radius: 50%; }
+.switch input:checked + .slider { background: var(--primary); }
+.switch input:checked + .slider::before { transform: translateX(16px); }
+.toggle-icon { font-size: 0.95rem; }
+.opt-select {
+  font-size: 0.85em; padding: 4px 8px;
+  border-radius: 6px; border: 1px solid var(--border-strong);
+  background: var(--card-bg); color: var(--text);
+  font-family: inherit; cursor: pointer; outline: none;
+}
+.opt-select:focus { border-color: var(--primary); }
+
+.btn-row { text-align: center; margin-bottom: 10px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; flex-shrink: 0; }
+button.primary-btn, button.secondary-btn, button.warn-btn, button.violet-btn {
+  color: #fff; border: none;
+  padding: 9px 22px; font-size: 0.9rem; border-radius: 7px;
+  cursor: pointer; font-weight: 600;
+  transition: all 0.2s; box-shadow: var(--shadow);
+}
+.primary-btn { background: var(--primary); }
+.primary-btn:hover { background: var(--primary-hover); box-shadow: var(--shadow-hover); }
+.secondary-btn { background: var(--text-muted); }
+.secondary-btn:hover { opacity: 0.85; }
+.warn-btn { background: var(--success); }
+.warn-btn:hover { background: var(--success-hover); }
+.violet-btn { background: var(--secondary); }
+.violet-btn:hover { opacity: 0.9; }
+button:active { transform: scale(0.97); }
+
+.status-row { text-align: center; margin-bottom: 8px; min-height: 22px; flex-shrink: 0; }
+.status { display: none; padding: 6px 14px; border-radius: 7px; font-size: 0.82rem; margin: 0 auto; max-width: fit-content; font-family: 'Consolas', monospace; }
+.status.error { display: inline-block; background: var(--error-bg); color: var(--danger); border: 1px solid var(--danger); }
+.status.ok { display: inline-block; background: rgba(5,150,105,0.10); color: var(--success); border: 1px solid var(--success); }
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; flex: 1 1 auto; min-height: 0; }
+.panel { display: flex; flex-direction: column; background: var(--card-bg); padding: 12px; border-radius: 10px; box-shadow: var(--shadow); min-width: 0; min-height: 0; }
+.panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; flex-shrink: 0; }
+.panel-title { font-weight: 700; font-size: 0.92rem; color: var(--primary); }
+.panel-title.label-2 { color: var(--secondary); }
+
+.code-box {
+  display: flex;
+  border: 2px solid var(--border-strong);
+  border-radius: 8px;
+  overflow: hidden;
+  flex: 1 1 auto; min-height: 0;
+}
+.code-box:focus-within { border-color: var(--primary); }
+.code-box.invalid { border-color: var(--danger); box-shadow: 0 0 0 2px var(--error-bg); }
+
+.gutter {
+  flex: 0 0 auto;
+  min-width: 48px;
+  padding: 12px 8px 12px 10px;
+  background: var(--gutter-bg);
+  color: var(--gutter-text);
+  border-right: 1px solid var(--gutter-border);
+  font-family: 'Consolas', monospace;
+  font-size: 0.85rem; line-height: 1.5;
+  text-align: right;
+  user-select: none;
+  pointer-events: none;
+  white-space: pre;
+  overflow: hidden;
+}
+.gutter .err-line {
+  color: var(--danger);
+  font-weight: bold;
+  background: var(--error-bg);
+  display: inline-block;
+  width: 100%;
+}
+.code-content { flex: 1 1 auto; min-width: 0; min-height: 0; display: flex; overflow: hidden; }
+textarea.code-input, .code-output {
+  width: 100%; height: 100%; padding: 12px;
+  border: none; background: transparent;
+  color: var(--text);
+  font-family: 'Consolas', monospace;
+  font-size: 0.85rem; line-height: 1.5;
+  resize: none; outline: none;
+  overflow: auto; white-space: pre;
+  display: block; flex: 1 1 auto;
+  tab-size: 2;
+}
+.code-output[contenteditable="false"] { user-select: text; cursor: text; }
+
+/* GraphQL syntax highlighting */
+.gql-keyword     { color: var(--gql-keyword); font-weight: 700; }
+.gql-type        { color: var(--gql-type); font-weight: 600; }
+.gql-field       { color: var(--gql-field); }
+.gql-string      { color: var(--gql-string); }
+.gql-number      { color: var(--gql-number); }
+.gql-comment     { color: var(--gql-comment); font-style: italic; }
+.gql-variable    { color: var(--gql-variable); }
+.gql-directive   { color: var(--gql-directive); font-weight: 600; }
+.gql-punctuation { color: var(--gql-punctuation); }
+.gql-enum        { color: var(--gql-enum); font-weight: 600; }
+
+.error-block {
+  padding: 14px; color: var(--danger);
+  background: var(--error-bg);
+  border-left: 3px solid var(--danger);
+  border-radius: 6px;
+  font-family: 'Consolas', monospace;
+  font-size: 0.85rem; line-height: 1.6;
+  white-space: pre-wrap; width: 100%;
+}
+.error-block .err-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 8px; display: block; }
+.error-block .err-context {
+  background: var(--card-bg);
+  border: 1px solid var(--danger);
+  border-radius: 6px; padding: 10px;
+  margin: 8px 0; color: var(--text);
+  overflow-x: auto;
+  white-space: pre;
+}
+.error-block .err-pointer { color: var(--danger); font-weight: 700; }
+.error-block .err-line-tag {
+  color: var(--gutter-text);
+  user-select: none;
+  display: inline-block; min-width: 30px; margin-right: 8px;
+}
+
+.success-banner {
+  color: var(--success);
+  background: rgba(5,150,105,0.10);
+  border-left: 3px solid var(--success);
+  padding: 10px 14px; border-radius: 6px;
+  margin-bottom: 10px; font-weight: 600;
+}
+
+.badge {
+  background: var(--primary); color: #fff;
+  border-radius: 20px;
+  padding: 2px 9px; font-size: 0.72rem; font-weight: 600;
+  flex-shrink: 0;
+}
+.badge-green { background: var(--success); }
+.badge-red { background: var(--danger); }
+.copy-btn, .download-btn {
+  color: #fff; border: none;
+  padding: 4px 12px; font-size: 0.78rem;
+  border-radius: 6px; cursor: pointer; font-weight: 600;
+  flex-shrink: 0;
+}
+.copy-btn { background: var(--success); }
+.copy-btn:hover { background: var(--success-hover); }
+.download-btn { background: var(--secondary); }
+.download-btn:hover { opacity: 0.9; }
+
+@media (max-width: 1000px) { .grid { grid-template-columns: 1fr; } body, html { height: auto; min-height: 100vh; } }
+@media (max-width: 700px) { h1 { font-size: 1.3rem; } }
+</style>
+</head>
+<body>
+
+<div class="top-actions">
+  <button class="icon-btn" id="theme-toggle" title="Toggle dark mode">🌙</button>
+</div>
+
+<div class="container">
+  <h1>GraphQL Validator &amp; Formatter</h1>
+  <p class="subtitle">
+    Format, beautify, minify and validate GraphQL queries, mutations, fragments &amp; SDL schemas — with precise line/column error reporting.<br>
+    <span style="color:var(--hint);font-size:0.85em;">All processing is local. Nothing is uploaded.</span>
+  </p>
+
+  <div class="options-bar">
+    <label class="toggle-wrap" title="Indentation size">
+      <span class="toggle-icon">📏</span>
+      <span>Indent</span>
+      <select id="opt-indent" class="opt-select">
+        <option value="2">2 spaces</option>
+        <option value="4">4 spaces</option>
+        <option value="tab">Tab</option>
+      </select>
+    </label>
+    <label class="toggle-wrap" title="Sort fields alphabetically within each selection set">
+      <span class="toggle-icon">🔤</span>
+      <span>Sort fields</span>
+      <span class="switch"><input type="checkbox" id="opt-sort"><span class="slider"></span></span>
+    </label>
+    <label class="toggle-wrap" title="Preserve comments in formatted output">
+      <span class="toggle-icon">💬</span>
+      <span>Preserve comments</span>
+      <span class="switch"><input type="checkbox" id="opt-comments" checked><span class="slider"></span></span>
+    </label>
+    <label class="toggle-wrap" title="Apply syntax highlighting">
+      <span class="toggle-icon">🎨</span>
+      <span>Syntax highlight</span>
+      <span class="switch"><input type="checkbox" id="opt-highlight" checked><span class="slider"></span></span>
+    </label>
+  </div>
+
+  <div class="btn-row">
+    <button class="primary-btn" id="btnFormat">✨ Format / Beautify</button>
+    <button class="warn-btn" id="btnMinify">🗜️ Minify</button>
+    <button class="violet-btn" id="btnValidate">✓ Validate</button>
+    <button class="secondary-btn" id="btnSample">📄 Sample Query</button>
+    <button class="secondary-btn" id="btnSampleSchema">📄 Sample Schema</button>
+    <button class="secondary-btn" id="btnClear">🗑️ Clear</button>
+  </div>
+
+  <div class="status-row"><div id="status" class="status"></div></div>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">📥 Input GraphQL</span>
+        <span class="badge" id="input-count">0 lines</span>
+      </div>
+      <div class="code-box" id="inputWrap">
+        <div class="gutter" id="inputLines">1</div>
+        <div class="code-content">
+          <textarea id="input" class="code-input" placeholder="Paste your GraphQL query, mutation, fragment or SDL schema here..." spellcheck="false"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title label-2">📤 Output</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span class="badge badge-green" id="output-status" style="display:none;">Valid</span>
+          <span class="badge" id="output-count">0 lines</span>
+          <button class="copy-btn" id="btnCopy">📋 Copy</button>
+          <button class="download-btn" id="btnDownload">⬇️ Download</button>
+        </div>
+      </div>
+      <div class="code-box">
+        <div class="gutter" id="outputLines">&nbsp;</div>
+        <div class="code-content">
+          <div id="output" class="code-output" contenteditable="false">
+            <span style="color:var(--text-muted);font-style:italic;padding:8px;display:block;">-- output will appear here --</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- Theme ---------- */
+function applyTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  const b = document.getElementById('theme-toggle');
+  if (b) b.textContent = t === 'dark' ? '☀️' : '🌙';
+}
+function toggleTheme() {
+  const c = document.documentElement.getAttribute('data-theme') || 'light';
+  const n = c === 'light' ? 'dark' : 'light';
+  applyTheme(n);
+  try { localStorage.setItem('gql-theme', n); } catch(e){}
+}
+(function(){ let s='light'; try{s=localStorage.getItem('gql-theme')||'light';}catch(e){} document.documentElement.setAttribute('data-theme', s); })();
+
+document.addEventListener('DOMContentLoaded', function() {
+  let saved = 'light';
+  try { saved = localStorage.getItem('gql-theme') || 'light'; } catch(e){}
+  applyTheme(saved);
+  document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+
+  const inputEl = document.getElementById('input');
+  const outputEl = document.getElementById('output');
+  const inputLines = document.getElementById('inputLines');
+  const outputLines = document.getElementById('outputLines');
+  const inputCount = document.getElementById('input-count');
+  const outputCount = document.getElementById('output-count');
+  const inputWrap = document.getElementById('inputWrap');
+  const statusEl = document.getElementById('status');
+  const outputStatus = document.getElementById('output-status');
+
+  /* ---------- Helpers ---------- */
+  function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+  function showStatus(msg, ok) {
+    statusEl.textContent = msg;
+    statusEl.className = 'status ' + (ok ? 'ok' : 'error');
+    if (ok) setTimeout(() => { statusEl.style.display='none'; statusEl.className='status'; }, 5000);
+  }
+
+  function updateLineNumbers(el, text, errorLine) {
+    const lines = (text || '').split('\n').length || 1;
+    let html = '';
+    for (let i = 1; i <= lines; i++) {
+      if (errorLine && i === errorLine) html += '<span class="err-line">' + i + '</span>\n';
+      else html += i + '\n';
+    }
+    el.innerHTML = html.replace(/\n$/, '');
+  }
+
+  function updateInputCount() {
+    const t = inputEl.value;
+    const n = t.length === 0 ? 0 : t.split('\n').length;
+    inputCount.textContent = n + (n === 1 ? ' line' : ' lines');
+  }
+  function syncScroll(src, gutter) { gutter.scrollTop = src.scrollTop; }
+
+  function getOpts() {
+    const iv = document.getElementById('opt-indent').value;
+    return {
+      indent: iv === 'tab' ? '\t' : ' '.repeat(parseInt(iv, 10)),
+      sort: document.getElementById('opt-sort').checked,
+      comments: document.getElementById('opt-comments').checked,
+      highlight: document.getElementById('opt-highlight').checked
+    };
+  }
+
+  /* ============================================================
+     GraphQL LEXER — produces tokens with line/column info
+     ============================================================ */
+  const TOKEN_TYPES = {
+    PUNCTUATION: 'punctuation',
+    NAME: 'name',
+    INT: 'int',
+    FLOAT: 'float',
+    STRING: 'string',
+    BLOCK_STRING: 'block_string',
+    COMMENT: 'comment',
+    VARIABLE: 'variable',
+    DIRECTIVE: 'directive',
+    EOF: 'eof'
+  };
+
+  function GqlError(message, line, column, source) {
+    this.message = message;
+    this.line = line;
+    this.column = column;
+    this.source = source;
+  }
+
+  function tokenize(src) {
+    const tokens = [];
+    let pos = 0;
+    let line = 1;
+    let lineStart = 0;
+    const len = src.length;
+
+    function col() { return pos - lineStart + 1; }
+    function err(msg) { throw new GqlError(msg, line, col(), src); }
+
+    while (pos < len) {
+      const ch = src[pos];
+
+      // Whitespace (but track newlines)
+      if (ch === '\n') { line++; pos++; lineStart = pos; continue; }
+      if (ch === '\r') { pos++; if (src[pos] === '\n') pos++; line++; lineStart = pos; continue; }
+      if (ch === ' ' || ch === '\t' || ch === ',') { pos++; continue; }
+
+      // Comment
+      if (ch === '#') {
+        const startLine = line, startCol = col();
+        let end = pos + 1;
+        while (end < len && src[end] !== '\n' && src[end] !== '\r') end++;
+        tokens.push({ type: TOKEN_TYPES.COMMENT, value: src.substring(pos, end), line: startLine, col: startCol });
+        pos = end;
+        continue;
+      }
+
+      // Block string """..."""
+      if (ch === '"' && src[pos+1] === '"' && src[pos+2] === '"') {
+        const startLine = line, startCol = col();
+        const startPos = pos;
+        pos += 3;
+        while (pos < len) {
+          if (src[pos] === '"' && src[pos+1] === '"' && src[pos+2] === '"') {
+            pos += 3;
+            tokens.push({ type: TOKEN_TYPES.BLOCK_STRING, value: src.substring(startPos, pos), line: startLine, col: startCol });
+            break;
+          }
+          if (src[pos] === '\\' && src[pos+1] === '"' && src[pos+2] === '"' && src[pos+3] === '"') {
+            pos += 4; continue;
+          }
+          if (src[pos] === '\n') { line++; pos++; lineStart = pos; continue; }
+          if (src[pos] === '\r') { pos++; if (src[pos] === '\n') pos++; line++; lineStart = pos; continue; }
+          pos++;
+        }
+        if (pos > len) err("Unterminated block string");
+        continue;
+      }
+
+      // String "..."
+      if (ch === '"') {
+        const startLine = line, startCol = col();
+        const startPos = pos;
+        pos++;
+        while (pos < len && src[pos] !== '"') {
+          if (src[pos] === '\n' || src[pos] === '\r') err("Unterminated string literal");
+          if (src[pos] === '\\') { pos += 2; continue; }
+          pos++;
+        }
+        if (pos >= len) err("Unterminated string literal");
+        pos++;
+        tokens.push({ type: TOKEN_TYPES.STRING, value: src.substring(startPos, pos), line: startLine, col: startCol });
+        continue;
+      }
+
+      // Variable $name
+      if (ch === '$') {
+        const startLine = line, startCol = col();
+        const startPos = pos;
+        pos++;
+        if (pos >= len || !/[_A-Za-z]/.test(src[pos])) err("Expected variable name after '$'");
+        while (pos < len && /[_A-Za-z0-9]/.test(src[pos])) pos++;
+        tokens.push({ type: TOKEN_TYPES.VARIABLE, value: src.substring(startPos, pos), line: startLine, col: startCol });
+        continue;
+      }
+
+      // Directive @name
+      if (ch === '@') {
+        const startLine = line, startCol = col();
+        const startPos = pos;
+        pos++;
+        if (pos >= len || !/[_A-Za-z]/.test(src[pos])) err("Expected directive name after '@'");
+        while (pos < len && /[_A-Za-z0-9]/.test(src[pos])) pos++;
+        tokens.push({ type: TOKEN_TYPES.DIRECTIVE, value: src.substring(startPos, pos), line: startLine, col: startCol });
+        continue;
+      }
+
+      // Number (int / float)
+      if (ch === '-' || /[0-9]/.test(ch)) {
+        const startLine = line, startCol = col();
+        const startPos = pos;
+        if (src[pos] === '-') pos++;
+        if (src[pos] === '0') pos++;
+        else if (/[1-9]/.test(src[pos])) { while (pos < len && /[0-9]/.test(src[pos])) pos++; }
+        else err("Invalid number");
+        let isFloat = false;
+        if (src[pos] === '.') {
+          isFloat = true;
+          pos++;
+          if (!/[0-9]/.test(src[pos])) err("Invalid float: expected digit after '.'");
+          while (pos < len && /[0-9]/.test(src[pos])) pos++;
+        }
+        if (src[pos] === 'e' || src[pos] === 'E') {
+          isFloat = true;
+          pos++;
+          if (src[pos] === '+' || src[pos] === '-') pos++;
+          if (!/[0-9]/.test(src[pos])) err("Invalid exponent");
+          while (pos < len && /[0-9]/.test(src[pos])) pos++;
+        }
+        tokens.push({
+          type: isFloat ? TOKEN_TYPES.FLOAT : TOKEN_TYPES.INT,
+          value: src.substring(startPos, pos),
+          line: startLine, col: startCol
+        });
+        continue;
+      }
+
+      // Punctuation
+      if ('!$&():=@[]{|}'.indexOf(ch) >= 0) {
+        const startLine = line, startCol = col();
+        // Spread "..."
+        if (ch === '.' && src[pos+1] === '.' && src[pos+2] === '.') {
+          tokens.push({ type: TOKEN_TYPES.PUNCTUATION, value: '...', line: startLine, col: startCol });
+          pos += 3;
+          continue;
+        }
+        tokens.push({ type: TOKEN_TYPES.PUNCTUATION, value: ch, line: startLine, col: startCol });
+        pos++;
+        continue;
+      }
+      if (ch === '.' && src[pos+1] === '.' && src[pos+2] === '.') {
+        tokens.push({ type: TOKEN_TYPES.PUNCTUATION, value: '...', line: line, col: col() });
+        pos += 3;
+        continue;
+      }
+
+      // Name
+      if (/[_A-Za-z]/.test(ch)) {
+        const startLine = line, startCol = col();
+        const startPos = pos;
+        while (pos < len && /[_A-Za-z0-9]/.test(src[pos])) pos++;
+        tokens.push({ type: TOKEN_TYPES.NAME, value: src.substring(startPos, pos), line: startLine, col: startCol });
+        continue;
+      }
+
+      err("Unexpected character: '" + ch + "' (U+" + ch.charCodeAt(0).toString(16).toUpperCase() + ")");
+    }
+
+    tokens.push({ type: TOKEN_TYPES.EOF, value: '', line: line, col: col() });
+    return tokens;
+  }
+
+  /* ============================================================
+     GraphQL PARSER (recursive descent)
+     Produces a simple AST suitable for re-printing.
+     ============================================================ */
+  const KEYWORDS = new Set([
+    'query','mutation','subscription','fragment','on',
+    'true','false','null',
+    'schema','scalar','type','interface','union','enum','input','extend','directive','implements','repeatable'
+  ]);
+  const SDL_TOP = new Set(['schema','scalar','type','interface','union','enum','input','directive','extend']);
+
+  function Parser(tokens, source) {
+    this.tokens = tokens;
+    this.pos = 0;
+    this.source = source;
+  }
+  Parser.prototype.peek = function(offset) {
+    return this.tokens[this.pos + (offset || 0)];
+  };
+  Parser.prototype.consume = function() {
+    return this.tokens[this.pos++];
+  };
+  Parser.prototype.expect = function(type, value) {
+    const t = this.peek();
+    if (t.type !== type || (value !== undefined && t.value !== value)) {
+      throw new GqlError(
+        "Expected " + (value !== undefined ? "'" + value + "'" : type) + " but found '" + t.value + "'",
+        t.line, t.col, this.source
+      );
+    }
+    return this.consume();
+  };
+  Parser.prototype.isPunc = function(v, offset) {
+    const t = this.peek(offset);
+    return t && t.type === TOKEN_TYPES.PUNCTUATION && t.value === v;
+  };
+  Parser.prototype.isName = function(v, offset) {
+    const t = this.peek(offset);
+    return t && t.type === TOKEN_TYPES.NAME && (v === undefined || t.value === v);
+  };
+
+  // skip comments but collect them on the next node
+  Parser.prototype.skipComments = function() {
+    const collected = [];
+    while (this.peek().type === TOKEN_TYPES.COMMENT) {
+      collected.push(this.consume());
+    }
+    return collected;
+  };
+
+  Parser.prototype.parseDocument = function() {
+    const definitions = [];
+    while (true) {
+      const comments = this.skipComments();
+      const t = this.peek();
+      if (t.type === TOKEN_TYPES.EOF) break;
+
+      let def;
+      // Description (string before a type def)
+      let description = null;
+      if (t.type === TOKEN_TYPES.STRING || t.type === TOKEN_TYPES.BLOCK_STRING) {
+        description = this.consume();
+        this.skipComments();
+      }
+
+      const t2 = this.peek();
+      if (t2.type === TOKEN_TYPES.PUNCTUATION && t2.value === '{') {
+        // Anonymous query
+        def = { kind: 'OperationDefinition', operation: 'query', name: null, variables: [], directives: [], selectionSet: this.parseSelectionSet(), comments, description };
+      } else if (t2.type === TOKEN_TYPES.NAME) {
+        if (t2.value === 'query' || t2.value === 'mutation' || t2.value === 'subscription') {
+          def = this.parseOperationDefinition();
+          def.comments = comments;
+          def.description = description;
+        } else if (t2.value === 'fragment') {
+          def = this.parseFragmentDefinition();
+          def.comments = comments;
+          def.description = description;
+        } else if (SDL_TOP.has(t2.value)) {
+          def = this.parseTypeSystemDefinition();
+          def.comments = comments;
+          def.description = description;
+        } else {
+          throw new GqlError("Unexpected token '" + t2.value + "' at top level", t2.line, t2.col, this.source);
+        }
+      } else {
+        throw new GqlError("Unexpected token '" + t2.value + "'", t2.line, t2.col, this.source);
+      }
+      definitions.push(def);
+    }
+    return { kind: 'Document', definitions };
+  };
+
+  Parser.prototype.parseOperationDefinition = function() {
+    const opTok = this.consume(); // query/mutation/subscription
+    let name = null;
+    if (this.isName()) name = this.consume().value;
+    const variables = this.isPunc('(') ? this.parseVariableDefinitions() : [];
+    const directives = this.parseDirectives();
+    const selectionSet = this.parseSelectionSet();
+    return { kind: 'OperationDefinition', operation: opTok.value, name, variables, directives, selectionSet };
+  };
+
+  Parser.prototype.parseVariableDefinitions = function() {
+    this.expect(TOKEN_TYPES.PUNCTUATION, '(');
+    const defs = [];
+    while (!this.isPunc(')')) {
+      this.skipComments();
+      const varTok = this.expect(TOKEN_TYPES.VARIABLE);
+      this.expect(TOKEN_TYPES.PUNCTUATION, ':');
+      const type = this.parseType();
+      let defaultValue = null;
+      if (this.isPunc('=')) { this.consume(); defaultValue = this.parseValue(); }
+      const directives = this.parseDirectives();
+      defs.push({ variable: varTok.value, type, defaultValue, directives });
+    }
+    this.expect(TOKEN_TYPES.PUNCTUATION, ')');
+    return defs;
+  };
+
+  Parser.prototype.parseType = function() {
+    let type;
+    if (this.isPunc('[')) {
+      this.consume();
+      const inner = this.parseType();
+      this.expect(TOKEN_TYPES.PUNCTUATION, ']');
+      type = { kind: 'ListType', type: inner };
+    } else {
+      const nameTok = this.expect(TOKEN_TYPES.NAME);
+      type = { kind: 'NamedType', name: nameTok.value };
+    }
+    if (this.isPunc('!')) { this.consume(); type = { kind: 'NonNullType', type }; }
+    return type;
+  };
+
+  Parser.prototype.parseDirectives = function() {
+    const dirs = [];
+    while (this.peek().type === TOKEN_TYPES.DIRECTIVE) {
+      const dTok = this.consume();
+      const args = this.isPunc('(') ? this.parseArguments() : [];
+      dirs.push({ name: dTok.value.substring(1), args });
+    }
+    return dirs;
+  };
+
+  Parser.prototype.parseArguments = function() {
+    this.expect(TOKEN_TYPES.PUNCTUATION, '(');
+    const args = [];
+    while (!this.isPunc(')')) {
+      this.skipComments();
+      const nameTok = this.expect(TOKEN_TYPES.NAME);
+      this.expect(TOKEN_TYPES.PUNCTUATION, ':');
+      const value = this.parseValue();
+      args.push({ name: nameTok.value, value });
+    }
+    this.expect(TOKEN_TYPES.PUNCTUATION, ')');
+    return args;
+  };
+
+  Parser.prototype.parseValue = function() {
+    const t = this.peek();
+    if (t.type === TOKEN_TYPES.VARIABLE) { this.consume(); return { kind: 'Variable', value: t.value }; }
+    if (t.type === TOKEN_TYPES.INT) { this.consume(); return { kind: 'IntValue', value: t.value }; }
+    if (t.type === TOKEN_TYPES.FLOAT) { this.consume(); return { kind: 'FloatValue', value: t.value }; }
+    if (t.type === TOKEN_TYPES.STRING || t.type === TOKEN_TYPES.BLOCK_STRING) {
+      this.consume(); return { kind: 'StringValue', value: t.value, block: t.type === TOKEN_TYPES.BLOCK_STRING };
+    }
+    if (t.type === TOKEN_TYPES.NAME) {
+      if (t.value === 'true' || t.value === 'false') { this.consume(); return { kind: 'BooleanValue', value: t.value }; }
+      if (t.value === 'null') { this.consume(); return { kind: 'NullValue', value: 'null' }; }
+      this.consume(); return { kind: 'EnumValue', value: t.value };
+    }
+    if (t.type === TOKEN_TYPES.PUNCTUATION && t.value === '[') {
+      this.consume();
+      const items = [];
+      while (!this.isPunc(']')) { this.skipComments(); items.push(this.parseValue()); }
+      this.expect(TOKEN_TYPES.PUNCTUATION, ']');
+      return { kind: 'ListValue', values: items };
+    }
+    if (t.type === TOKEN_TYPES.PUNCTUATION && t.value === '{') {
+      this.consume();
+      const fields = [];
+      while (!this.isPunc('}')) {
+        this.skipComments();
+        const nameTok = this.expect(TOKEN_TYPES.NAME);
+        this.expect(TOKEN_TYPES.PUNCTUATION, ':');
+        const value = this.parseValue();
+        fields.push({ name: nameTok.value, value });
+      }
+      this.expect(TOKEN_TYPES.PUNCTUATION, '}');
+      return { kind: 'ObjectValue', fields };
+    }
+    throw new GqlError("Unexpected token '" + t.value + "' while parsing value", t.line, t.col, this.source);
+  };
+
+  Parser.prototype.parseSelectionSet = function() {
+    this.expect(TOKEN_TYPES.PUNCTUATION, '{');
+    const selections = [];
+    while (!this.isPunc('}')) {
+      const comments = this.skipComments();
+      if (this.peek().type === TOKEN_TYPES.EOF) {
+        const t = this.peek();
+        throw new GqlError("Unexpected EOF inside selection set (missing '}')", t.line, t.col, this.source);
+      }
+      if (this.isPunc('...')) {
+        this.consume();
+        // Inline fragment or fragment spread
+        if (this.isName('on')) {
+          this.consume();
+          const typeCond = this.expect(TOKEN_TYPES.NAME).value;
+          const directives = this.parseDirectives();
+          const ss = this.parseSelectionSet();
+          selections.push({ kind: 'InlineFragment', typeCondition: typeCond, directives, selectionSet: ss, comments });
+        } else if (this.peek().type === TOKEN_TYPES.PUNCTUATION && this.peek().value === '{') {
+          // Inline fragment without type condition
+          const directives = this.parseDirectives();
+          const ss = this.parseSelectionSet();
+          selections.push({ kind: 'InlineFragment', typeCondition: null, directives, selectionSet: ss, comments });
+        } else if (this.peek().type === TOKEN_TYPES.DIRECTIVE) {
+          const directives = this.parseDirectives();
+          const ss = this.parseSelectionSet();
+          selections.push({ kind: 'InlineFragment', typeCondition: null, directives, selectionSet: ss, comments });
+        } else {
+          // Fragment spread
+          const nameTok = this.expect(TOKEN_TYPES.NAME);
+          const directives = this.parseDirectives();
+          selections.push({ kind: 'FragmentSpread', name: nameTok.value, directives, comments });
+        }
+      } else {
+        // Field (possibly with alias)
+        let alias = null;
+        let nameTok = this.expect(TOKEN_TYPES.NAME);
+        if (this.isPunc(':')) {
+          this.consume();
+          alias = nameTok.value;
+          nameTok = this.expect(TOKEN_TYPES.NAME);
+        }
+        const args = this.isPunc('(') ? this.parseArguments() : [];
+        const directives = this.parseDirectives();
+        let ss = null;
+        if (this.isPunc('{')) ss = this.parseSelectionSet();
+        selections.push({ kind: 'Field', alias, name: nameTok.value, arguments: args, directives, selectionSet: ss, comments });
+      }
+    }
+    this.expect(TOKEN_TYPES.PUNCTUATION, '}');
+    return { kind: 'SelectionSet', selections };
+  };
+
+  Parser.prototype.parseFragmentDefinition = function() {
+    this.expect(TOKEN_TYPES.NAME, 'fragment');
+    const name = this.expect(TOKEN_TYPES.NAME).value;
+    this.expect(TOKEN_TYPES.NAME, 'on');
+    const typeCond = this.expect(TOKEN_TYPES.NAME).value;
+    const directives = this.parseDirectives();
+    const ss = this.parseSelectionSet();
+    return { kind: 'FragmentDefinition', name, typeCondition: typeCond, directives, selectionSet: ss };
+  };
+
+  /* ---------- SDL parsing ---------- */
+  Parser.prototype.parseTypeSystemDefinition = function() {
+    const t = this.peek();
+    if (t.value === 'extend') {
+      this.consume();
+      const def = this.parseTypeSystemDefinition();
+      def.extend = true;
+      return def;
+    }
+    if (t.value === 'schema') return this.parseSchemaDefinition();
+    if (t.value === 'scalar') return this.parseScalarTypeDefinition();
+    if (t.value === 'type') return this.parseObjectTypeDefinition();
+    if (t.value === 'interface') return this.parseInterfaceTypeDefinition();
+    if (t.value === 'union') return this.parseUnionTypeDefinition();
+    if (t.value === 'enum') return this.parseEnumTypeDefinition();
+    if (t.value === 'input') return this.parseInputObjectTypeDefinition();
+    if (t.value === 'directive') return this.parseDirectiveDefinition();
+    throw new GqlError("Unexpected SDL keyword '" + t.value + "'", t.line, t.col, this.source);
+  };
+
+  Parser.prototype.parseSchemaDefinition = function() {
+    this.expect(TOKEN_TYPES.NAME, 'schema');
+    const directives = this.parseDirectives();
+    this.expect(TOKEN_TYPES.PUNCTUATION, '{');
+    const operationTypes = [];
+    while (!this.isPunc('}')) {
+      this.skipComments();
+      const opTok = this.expect(TOKEN_TYPES.NAME);
+      this.expect(TOKEN_TYPES.PUNCTUATION, ':');
+      const typeName = this.expect(TOKEN_TYPES.NAME).value;
+      operationTypes.push({ operation: opTok.value, type: typeName });
+    }
+    this.expect(TOKEN_TYPES.PUNCTUATION, '}');
+    return { kind: 'SchemaDefinition', directives, operationTypes };
+  };
+
+  Parser.prototype.parseScalarTypeDefinition = function() {
+    this.expect(TOKEN_TYPES.NAME, 'scalar');
+    const name = this.expect(TOKEN_TYPES.NAME).value;
+    const directives = this.parseDirectives();
+    return { kind: 'ScalarTypeDefinition', name, directives };
+  };
+
+  Parser.prototype.parseImplementsInterfaces = function() {
+    if (!this.isName('implements')) return [];
+    this.consume();
+    const ifaces = [];
+    if (this.isPunc('&')) this.consume();
+    ifaces.push(this.expect(TOKEN_TYPES.NAME).value);
+    while (this.isPunc('&')) {
+      this.consume();
+      ifaces.push(this.expect(TOKEN_TYPES.NAME).value);
+    }
+    return ifaces;
+  };
+
+  Parser.prototype.parseObjectTypeDefinition = function() {
+    this.expect(TOKEN_TYPES.NAME, 'type');
+    const name = this.expect(TOKEN_TYPES.NAME).value;
+    const interfaces = this.parseImplementsInterfaces();
+    const directives = this.parseDirectives();
+    const fields = this.isPunc('{') ? this.parseFieldsDefinition() : [];
+    return { kind: 'ObjectTypeDefinition', name, interfaces, directives, fields };
+  };
+
+  Parser.prototype.parseInterfaceTypeDefinition = function() {
+    this.expect(TOKEN_TYPES.NAME, 'interface');
+    const name = this.expect(TOKEN_TYPES.NAME).value;
+    const interfaces = this.parseImplementsInterfaces();
+    const directives = this.parseDirectives();
+    const fields = this.isPunc('{') ? this.parseFieldsDefinition() : [];
+    return { kind: 'InterfaceTypeDefinition', name, interfaces, directives, fields };
+  };
+
+  Parser.prototype.parseUnionTypeDefinition = function() {
+    this.expect(TOKEN_TYPES.NAME, 'union');
+    const name = this.expect(TOKEN_TYPES.NAME).value;
+    const directives = this.parseDirectives();
+    let members = [];
+    if (this.isPunc('=')) {
+      this.consume();
+      if (this.isPunc('|')) this.consume();
+      members.push(this.expect(TOKEN_TYPES.NAME).value);
+      while (this.isPunc('|')) {
+        this.consume();
+        members.push(this.expect(TOKEN_TYPES.NAME).value);
+      }
+    }
+    return { kind: 'UnionTypeDefinition', name, directives, members };
+  };
+
+  Parser.prototype.parseEnumTypeDefinition = function() {
+    this.expect(TOKEN_TYPES.NAME, 'enum');
+    const name = this.expect(TOKEN_TYPES.NAME).value;
+    const directives = this.parseDirectives();
+    const values = [];
+    if (this.isPunc('{')) {
+      this.consume();
+      while (!this.isPunc('}')) {
+        this.skipComments();
+        let desc = null;
+        if (this.peek().type === TOKEN_TYPES.STRING || this.peek().type === TOKEN_TYPES.BLOCK_STRING) desc = this.consume().value;
+        const valName = this.expect(TOKEN_TYPES.NAME).value;
+        const valDirs = this.parseDirectives();
+        values.push({ name: valName, description: desc, directives: valDirs });
+      }
+      this.expect(TOKEN_TYPES.PUNCTUATION, '}');
+    }
+    return { kind: 'EnumTypeDefinition', name, directives, values };
+  };
+
+  Parser.prototype.parseFieldsDefinition = function() {
+    this.expect(TOKEN_TYPES.PUNCTUATION, '{');
+    const fields = [];
+    while (!this.isPunc('}')) {
+      this.skipComments();
+      let description = null;
+      if (this.peek().type === TOKEN_TYPES.STRING || this.peek().type === TOKEN_TYPES.BLOCK_STRING) description = this.consume().value;
+      const fname = this.expect(TOKEN_TYPES.NAME).value;
+      let args = [];
+      if (this.isPunc('(')) args = this.parseInputValueDefinitions(')');
+      this.expect(TOKEN_TYPES.PUNCTUATION, ':');
+      const type = this.parseType();
+      const dirs = this.parseDirectives();
+      fields.push({ name: fname, description, args, type, directives: dirs });
+    }
+    this.expect(TOKEN_TYPES.PUNCTUATION, '}');
+    return fields;
+  };
+
+  Parser.prototype.parseInputValueDefinitions = function(closer) {
+    const open = closer === ')' ? '(' : '{';
+    this.expect(TOKEN_TYPES.PUNCTUATION, open);
+    const defs = [];
+    while (!this.isPunc(closer)) {
+      this.skipComments();
+      let description = null;
+      if (this.peek().type === TOKEN_TYPES.STRING || this.peek().type === TOKEN_TYPES.BLOCK_STRING) description = this.consume().value;
+      const name = this.expect(TOKEN_TYPES.NAME).value;
+      this.expect(TOKEN_TYPES.PUNCTUATION, ':');
+      const type = this.parseType();
+      let defaultValue = null;
+      if (this.isPunc('=')) { this.consume(); defaultValue = this.parseValue(); }
+      const dirs = this.parseDirectives();
+      defs.push({ name, description, type, defaultValue, directives: dirs });
+    }
+    this.expect(TOKEN_TYPES.PUNCTUATION, closer);
+    return defs;
+  };
+
+  Parser.prototype.parseInputObjectTypeDefinition = function() {
+    this.expect(TOKEN_TYPES.NAME, 'input');
+    const name = this.expect(TOKEN_TYPES.NAME).value;
+    const directives = this.parseDirectives();
+    const fields = this.isPunc('{') ? this.parseInputValueDefinitions('}') : [];
+    return { kind: 'InputObjectTypeDefinition', name, directives, fields };
+  };
+
+  Parser.prototype.parseDirectiveDefinition = function() {
+    this.expect(TOKEN_TYPES.NAME, 'directive');
+    this.expect(TOKEN_TYPES.DIRECTIVE); // captures "@name" — but our lexer made @name a DIRECTIVE token
+    // The DIRECTIVE token contains "@name"; back up: actually `directive @name` — let's re-consume safely:
+    // (Above expect already consumed it; capture from the last token)
+    const last = this.tokens[this.pos - 1];
+    const name = last.value.substring(1);
+    let args = [];
+    if (this.isPunc('(')) args = this.parseInputValueDefinitions(')');
+    let repeatable = false;
+    if (this.isName('repeatable')) { this.consume(); repeatable = true; }
+    this.expect(TOKEN_TYPES.NAME, 'on');
+    const locations = [];
+    if (this.isPunc('|')) this.consume();
+    locations.push(this.expect(TOKEN_TYPES.NAME).value);
+    while (this.isPunc('|')) { this.consume(); locations.push(this.expect(TOKEN_TYPES.NAME).value); }
+    return { kind: 'DirectiveDefinition', name, args, repeatable, locations };
+  };
+
+  /* ============================================================
+     PRINTER (AST → formatted string)
+     ============================================================ */
+  function makePrinter(opts) {
+    const IND = opts.indent;
+
+    function pad(depth) { return IND.repeat(Math.max(0, depth)); }
+
+    function printType(t) {
+      if (t.kind === 'NamedType') return t.name;
+      if (t.kind === 'ListType') return '[' + printType(t.type) + ']';
+      if (t.kind === 'NonNullType') return printType(t.type) + '!';
+      return '';
+    }
+
+    function printValue(v) {
+      if (!v) return '';
+      switch (v.kind) {
+        case 'Variable': return v.value;
+        case 'IntValue':
+        case 'FloatValue':
+        case 'StringValue':
+        case 'BooleanValue':
+        case 'NullValue':
+        case 'EnumValue':
+          return v.value;
+        case 'ListValue': return '[' + v.values.map(printValue).join(', ') + ']';
+        case 'ObjectValue': return '{ ' + v.fields.map(f => f.name + ': ' + printValue(f.value)).join(', ') + ' }';
+      }
+      return '';
+    }
+
+    function printArgs(args) {
+      if (!args || args.length === 0) return '';
+      return '(' + args.map(a => a.name + ': ' + printValue(a.value)).join(', ') + ')';
+    }
+    function printDirectives(dirs) {
+      if (!dirs || dirs.length === 0) return '';
+      return ' ' + dirs.map(d => '@' + d.name + printArgs(d.args)).join(' ');
+    }
+
+    function printDescription(desc, depth) {
+      if (!desc) return '';
+      // desc is the raw string token value
+      return pad(depth) + desc + '\n';
+    }
+
+    function printComments(comments, depth) {
+  if (!opts.comments || !comments || comments.length === 0) return '';
+  return comments.map(c => {
+    // c may be a token object {value, line, col} OR a plain string — handle both
+    const text = (typeof c === 'string') ? c : (c && c.value ? c.value : '');
+    return pad(depth) + text;
+  }).join('\n') + '\n';
+}
+
+    function printSelectionSet(ss, depth) {
+      if (!ss || !ss.selections.length) return ' { }';
+      let out = ' {\n';
+      let sels = ss.selections.slice();
+      if (opts.sort) {
+        sels.sort((a, b) => {
+          const an = a.kind === 'Field' ? (a.alias || a.name) : (a.kind === 'FragmentSpread' ? '~' + a.name : '~');
+          const bn = b.kind === 'Field' ? (b.alias || b.name) : (b.kind === 'FragmentSpread' ? '~' + b.name : '~');
+          return an.localeCompare(bn);
+        });
+      }
+      for (const sel of sels) {
+        out += printComments(sel.comments, depth + 1);
+        if (sel.kind === 'Field') {
+          let line = pad(depth + 1);
+          if (sel.alias) line += sel.alias + ': ';
+          line += sel.name;
+          line += printArgs(sel.arguments);
+          line += printDirectives(sel.directives);
+          if (sel.selectionSet) line += printSelectionSet(sel.selectionSet, depth + 1);
+          out += line + '\n';
+        } else if (sel.kind === 'FragmentSpread') {
+          out += pad(depth + 1) + '...' + sel.name + printDirectives(sel.directives) + '\n';
+        } else if (sel.kind === 'InlineFragment') {
+          let line = pad(depth + 1) + '...';
+          if (sel.typeCondition) line += ' on ' + sel.typeCondition;
+          line += printDirectives(sel.directives);
+          line += printSelectionSet(sel.selectionSet, depth + 1);
+          out += line + '\n';
+        }
+      }
+      out += pad(depth) + '}';
+      return out;
+    }
+
+    function printVariableDefinitions(vars) {
+      if (!vars || vars.length === 0) return '';
+      const parts = vars.map(v => {
+        let s = v.variable + ': ' + printType(v.type);
+        if (v.defaultValue) s += ' = ' + printValue(v.defaultValue);
+        s += printDirectives(v.directives);
+        return s;
+      });
+      return '(' + parts.join(', ') + ')';
+    }
+
+    function printOperation(def, depth) {
+      let out = printComments(def.comments, depth);
+      let head = pad(depth);
+      // Anonymous query shortcut
+      const isAnonQuery = def.operation === 'query' && !def.name && def.variables.length === 0 && def.directives.length === 0;
+      if (!isAnonQuery) {
+        head += def.operation;
+        if (def.name) head += ' ' + def.name;
+        head += printVariableDefinitions(def.variables);
+        head += printDirectives(def.directives);
+      }
+      out += head + printSelectionSet(def.selectionSet, depth);
+      return out;
+    }
+
+    function printFragment(def, depth) {
+      let out = printComments(def.comments, depth);
+      out += pad(depth) + 'fragment ' + def.name + ' on ' + def.typeCondition + printDirectives(def.directives);
+      out += printSelectionSet(def.selectionSet, depth);
+      return out;
+    }
+
+    function printArgsDef(args) {
+      if (!args || args.length === 0) return '';
+      const inner = args.map(a => {
+        let s = a.name + ': ' + printType(a.type);
+        if (a.defaultValue) s += ' = ' + printValue(a.defaultValue);
+        s += printDirectives(a.directives);
+        return s;
+      });
+      return '(' + inner.join(', ') + ')';
+    }
+
+    function printFieldDefs(fields, depth) {
+      if (!fields || fields.length === 0) return ' { }';
+      let out = ' {\n';
+      const sorted = opts.sort ? fields.slice().sort((a,b) => a.name.localeCompare(b.name)) : fields;
+      for (const f of sorted) {
+        if (f.description) out += pad(depth + 1) + f.description + '\n';
+        out += pad(depth + 1) + f.name + printArgsDef(f.args) + ': ' + printType(f.type) + printDirectives(f.directives) + '\n';
+      }
+      out += pad(depth) + '}';
+      return out;
+    }
+
+    function printInputFieldDefs(fields, depth) {
+      if (!fields || fields.length === 0) return ' { }';
+      let out = ' {\n';
+      const sorted = opts.sort ? fields.slice().sort((a,b) => a.name.localeCompare(b.name)) : fields;
+      for (const f of sorted) {
+        if (f.description) out += pad(depth + 1) + f.description + '\n';
+        let line = pad(depth + 1) + f.name + ': ' + printType(f.type);
+        if (f.defaultValue) line += ' = ' + printValue(f.defaultValue);
+        line += printDirectives(f.directives);
+        out += line + '\n';
+      }
+      out += pad(depth) + '}';
+      return out;
+    }
+
+    function printTypeSystem(def, depth) {
+      const prefix = def.extend ? 'extend ' : '';
+      let out = '';
+      if (def.description) out += pad(depth) + def.description + '\n';
+      switch (def.kind) {
+        case 'SchemaDefinition': {
+          out += pad(depth) + prefix + 'schema' + printDirectives(def.directives) + ' {\n';
+          for (const op of def.operationTypes) out += pad(depth + 1) + op.operation + ': ' + op.type + '\n';
+          out += pad(depth) + '}';
+          return out;
+        }
+        case 'ScalarTypeDefinition':
+          return out + pad(depth) + prefix + 'scalar ' + def.name + printDirectives(def.directives);
+        case 'ObjectTypeDefinition': {
+          let line = pad(depth) + prefix + 'type ' + def.name;
+          if (def.interfaces.length) line += ' implements ' + def.interfaces.join(' & ');
+          line += printDirectives(def.directives);
+          line += printFieldDefs(def.fields, depth);
+          return out + line;
+        }
+        case 'InterfaceTypeDefinition': {
+          let line = pad(depth) + prefix + 'interface ' + def.name;
+          if (def.interfaces.length) line += ' implements ' + def.interfaces.join(' & ');
+          line += printDirectives(def.directives);
+          line += printFieldDefs(def.fields, depth);
+          return out + line;
+        }
+        case 'UnionTypeDefinition': {
+          let line = pad(depth) + prefix + 'union ' + def.name + printDirectives(def.directives);
+          if (def.members.length) line += ' = ' + def.members.join(' | ');
+          return out + line;
+        }
+        case 'EnumTypeDefinition': {
+          let line = pad(depth) + prefix + 'enum ' + def.name + printDirectives(def.directives);
+          if (def.values.length) {
+            line += ' {\n';
+            const sortedVals = opts.sort ? def.values.slice().sort((a,b)=>a.name.localeCompare(b.name)) : def.values;
+            for (const v of sortedVals) {
+              if (v.description) line += pad(depth + 1) + v.description + '\n';
+              line += pad(depth + 1) + v.name + printDirectives(v.directives) + '\n';
+            }
+            line += pad(depth) + '}';
+          }
+          return out + line;
+        }
+        case 'InputObjectTypeDefinition': {
+          let line = pad(depth) + prefix + 'input ' + def.name + printDirectives(def.directives) + printInputFieldDefs(def.fields, depth);
+          return out + line;
+        }
+        case 'DirectiveDefinition': {
+          let line = pad(depth) + 'directive @' + def.name + printArgsDef(def.args);
+          if (def.repeatable) line += ' repeatable';
+          line += ' on ' + def.locations.join(' | ');
+          return out + line;
+        }
+      }
+      return out;
+    }
+
+    return {
+      printDocument(doc) {
+        const parts = [];
+        for (const def of doc.definitions) {
+          if (def.kind === 'OperationDefinition') parts.push(printOperation(def, 0));
+          else if (def.kind === 'FragmentDefinition') parts.push(printFragment(def, 0));
+          else parts.push(printTypeSystem(def, 0));
+        }
+        return parts.join('\n\n');
+      }
+    };
+  }
+
+  function minifyDocument(doc) {
+    // Reuse the printer with no indent, then strip optional whitespace
+    const printer = makePrinter({ indent: '', sort: false, comments: false });
+    let out = printer.printDocument(doc);
+    // Collapse internal whitespace except inside strings (we'll be conservative)
+    // Strip newlines + redundant spaces
+    out = out.replace(/\s*\n\s*/g, ' ');
+    out = out.replace(/\s{2,}/g, ' ');
+    out = out.replace(/\s*([{}()$$$$:,])\s*/g, '$1');
+    out = out.replace(/}\s*/g, '}');
+    out = out.replace(/\s+!/g, '!');
+    return out;
+  }
+
+  /* ============================================================
+     Error formatting with context
+     ============================================================ */
+  function formatErrorBlock(src, err) {
+    const lines = src.split('\n');
+    const ln = err.line;
+    const cl = err.column;
+    let context = '';
+    if (ln && ln >= 1 && ln <= lines.length) {
+      const prevIdx = ln - 2, curIdx = ln - 1, nextIdx = ln;
+      if (prevIdx >= 0) context += '<span class="err-line-tag">' + (prevIdx + 1) + '</span>' + escapeHtml(lines[prevIdx]) + '\n';
+      context += '<span class="err-line-tag">' + ln + '</span>' + escapeHtml(lines[curIdx] || '') + '\n';
+      const pad = new Array(String(ln).length + 3).join(' ');
+      const arrow = pad + new Array(Math.max(0, cl - 1) + 1).join('-') + '^';
+      context += '<span class="err-pointer">' + arrow + '</span>\n';
+      if (nextIdx < lines.length) context += '<span class="err-line-tag">' + (nextIdx + 1) + '</span>' + escapeHtml(lines[nextIdx]) + '\n';
+    } else {
+      context = escapeHtml(src.substring(0, Math.min(200, src.length))) + (src.length > 200 ? '...' : '');
+    }
+    let header = '❌ Syntax error';
+    if (ln) header += ' at line ' + ln + ', column ' + (cl || '?');
+    return {
+      line: ln,
+      html: '<div class="error-block">' +
+            '<span class="err-title">' + header + '</span>' +
+            '<div class="err-context">' + context + '</div>' +
+            '<div style="margin-top:6px;color:var(--danger);font-weight:600;">' + escapeHtml(err.message) + '</div>' +
+            '</div>'
+    };
+  }
+
+  /* ============================================================
+     Syntax highlighter (regex-based, applied to formatted output)
+     ============================================================ */
+  function highlightGql(text) {
+  // Tokenize the formatted text using the same lexer; then emit HTML token-by-token.
+  // This is immune to "regex-eats-its-own-output" issues.
+  const KEYWORDS = new Set([
+    'query','mutation','subscription','fragment','on',
+    'true','false','null',
+    'schema','scalar','type','interface','union','enum','input',
+    'extend','directive','implements','repeatable'
+  ]);
+
+  let tokens;
+  try {
+    tokens = tokenize(text);
+  } catch (e) {
+    // If something goes wrong (shouldn't, since we just formatted it), fall back to plain escaped text
+    return escapeHtml(text);
+  }
+
+  let out = '';
+  let cursor = 0;
+
+  // Walk tokens in order; emit any "whitespace gap" between them as plain text.
+  // Each token's exact slice in the original text is determined by start/end via our lexer,
+  // but our lexer doesn't currently emit start indices. So we'll re-find each token's
+  // start via a position pointer that advances character-by-character.
+  // To avoid that complexity we'll rebuild positions here using line/col.
+
+  // Build line-start offsets so we can convert (line,col) -> absolute index
+  const lineStarts = [0];
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] === '\n') lineStarts.push(i + 1);
+  }
+  function posOf(line, col) { return lineStarts[line - 1] + (col - 1); }
+
+  for (let i = 0; i < tokens.length; i++) {
+    const tk = tokens[i];
+    if (tk.type === 'eof') break;
+    const start = posOf(tk.line, tk.col);
+    // Emit the gap (whitespace, commas) before this token
+    if (start > cursor) {
+      out += escapeHtml(text.substring(cursor, start));
+    }
+
+    let tokenText = tk.value;
+    let end = start + tokenText.length;
+
+    // Special handling: block strings already include their delimiters in .value; same for strings
+    let cls = '';
+    switch (tk.type) {
+      case 'comment':       cls = 'gql-comment'; break;
+      case 'string':        cls = 'gql-string'; break;
+      case 'block_string':  cls = 'gql-string'; break;
+      case 'variable':      cls = 'gql-variable'; break;
+      case 'directive':     cls = 'gql-directive'; break;
+      case 'int':
+      case 'float':         cls = 'gql-number'; break;
+      case 'name':
+        if (KEYWORDS.has(tk.value)) cls = 'gql-keyword';
+        else cls = ''; // plain name (field, type, etc.)
+        break;
+      case 'punctuation':   cls = 'gql-punctuation'; break;
+      default:              cls = '';
+    }
+
+    const escaped = escapeHtml(tokenText);
+    if (cls) {
+      out += '<span class="' + cls + '">' + escaped + '</span>';
+    } else {
+      out += escaped;
+    }
+    cursor = end;
+  }
+  // Trailing text (if any)
+  if (cursor < text.length) {
+    out += escapeHtml(text.substring(cursor));
+  }
+  return out;
+}
+
+  /* ============================================================
+     Public actions
+     ============================================================ */
+  function resetOutputSuccess(label) {
+    outputStatus.style.display = 'inline-block';
+    outputStatus.textContent = label;
+    outputStatus.className = 'badge badge-green';
+    inputWrap.classList.remove('invalid');
+  }
+  function setOutputInvalid() {
+    outputStatus.style.display = 'inline-block';
+    outputStatus.textContent = 'Invalid';
+    outputStatus.className = 'badge badge-red';
+    inputWrap.classList.add('invalid');
+  }
+
+  function doParse(src) {
+    const tokens = tokenize(src);
+    const parser = new Parser(tokens, src);
+    return parser.parseDocument();
+  }
+
+  function format() {
+    const src = inputEl.value;
+    if (!src.trim()) { showStatus('❌ Input is empty.', false); return; }
+    try {
+      const doc = doParse(src);
+      const opts = getOpts();
+      const printer = makePrinter(opts);
+      const out = printer.printDocument(doc);
+      window._gqlOutput = out;
+      if (opts.highlight) outputEl.innerHTML = highlightGql(out);
+      else outputEl.textContent = out;
+      updateLineNumbers(outputLines, out);
+      const lc = out.split('\n').length;
+      outputCount.textContent = lc + (lc === 1 ? ' line' : ' lines');
+      resetOutputSuccess('Formatted ✓');
+      updateLineNumbers(inputLines, src);
+      showStatus('✅ Formatted! ' + lc + ' lines, ' + out.length + ' chars.', true);
+    } catch (e) {
+      handleErr(e, src);
+    }
+  }
+
+  function minify() {
+    const src = inputEl.value;
+    if (!src.trim()) { showStatus('❌ Input is empty.', false); return; }
+    try {
+      const doc = doParse(src);
+      const out = minifyDocument(doc);
+      window._gqlOutput = out;
+      const opts = getOpts();
+      if (opts.highlight) outputEl.innerHTML = highlightGql(out);
+      else outputEl.textContent = out;
+      updateLineNumbers(outputLines, out);
+      const lc = out.split('\n').length;
+      outputCount.textContent = lc + (lc === 1 ? ' line' : ' lines');
+      resetOutputSuccess('Minified ✓');
+      updateLineNumbers(inputLines, src);
+      const pct = src.length > 0 ? Math.round((1 - out.length / src.length) * 100) : 0;
+      showStatus('🗜️ Minified! ' + src.length + ' → ' + out.length + ' chars (' + pct + '% smaller).', true);
+    } catch (e) {
+      handleErr(e, src);
+    }
+  }
+
+  function validate() {
+    const src = inputEl.value;
+    if (!src.trim()) { showStatus('❌ Input is empty.', false); return; }
+    try {
+      const doc = doParse(src);
+      const opts = getOpts();
+      outputEl.innerHTML = '<div class="success-banner">✓ GraphQL is syntactically valid. ' + doc.definitions.length + ' definition(s) parsed.</div>' +
+        '<div>' + (opts.highlight ? highlightGql(src) : escapeHtml(src)) + '</div>';
+      window._gqlOutput = src;
+      updateLineNumbers(outputLines, src);
+      const lc = src.split('\n').length;
+      outputCount.textContent = lc + (lc === 1 ? ' line' : ' lines');
+      resetOutputSuccess('Valid ✓');
+      updateLineNumbers(inputLines, src);
+      showStatus('✅ Valid GraphQL!', true);
+    } catch (e) {
+      handleErr(e, src);
+    }
+  }
+
+  function handleErr(e, src) {
+    const ln = e.line || null;
+    const errMsg = e.message || String(e);
+    const block = formatErrorBlock(src, e);
+    outputEl.innerHTML = block.html;
+    updateLineNumbers(outputLines, '');
+    outputCount.textContent = '0 lines';
+    setOutputInvalid();
+    // Highlight the error line in the input gutter
+    updateLineNumbers(inputLines, src, ln);
+    showStatus('❌ ' + errMsg + (ln ? ' (line ' + ln + ')' : ''), false);
+    window._gqlOutput = '';
+  }
+
+  function copyOutput(btn) {
+    const text = window._gqlOutput || '';
+    if (!text) { showStatus('Nothing to copy.', false); return; }
+    const done = () => showStatus('📋 Copied!', true);
+    if (navigator.clipboard?.writeText) navigator.clipboard.writeText(text).then(done).catch(fb);
+    else fb();
+    function fb() {
+      const t = document.createElement('textarea');
+      t.value = text; t.style.position='fixed'; t.style.opacity='0';
+      document.body.appendChild(t); t.select();
+      try { document.execCommand('copy'); done(); } catch(e){}
+      document.body.removeChild(t);
+    }
+  }
+
+  function download() {
+    const text = window._gqlOutput || '';
+    if (!text) { showStatus('Nothing to download.', false); return; }
+    const blob = new Blob([text], { type: 'application/graphql' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'formatted.graphql';
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+  }
+
+  function loadSampleQuery() {
+    inputEl.value =
+`# Sample GraphQL query with variables, fragments, directives, aliases
+query GetUserDetails($userId: ID!, $includeOrders: Boolean = false) {
+  user(id: $userId) {
+    id
+    fullName: name
+    email
+    profile {
+      ...ProfileFields
+      avatarUrl(size: LARGE)
+    }
+    orders @include(if: $includeOrders) {
+      ...OrderInfo
+    }
+    ... on PremiumUser {
+      subscriptionTier
+      memberSince
+    }
+  }
+}
+
+fragment ProfileFields on Profile {
+  bio
+  location
+  socialLinks {
+    twitter
+    github
+  }
+}
+
+fragment OrderInfo on Order {
+  id
+  total
+  status
+  items {
+    productId
+    quantity
+    price
+  }
+}
+
+mutation CreatePost($input: CreatePostInput!) {
+  createPost(input: $input) @logged {
+    id
+    title
+    publishedAt
+  }
+}
+
+subscription OnNewMessage($channelId: ID!) {
+  messageAdded(channelId: $channelId) {
+    id
+    text
+    author { name }
+  }
+}`;
+    onInput();
+    format();
+  }
+
+  function loadSampleSchema() {
+    inputEl.value =
+`# Sample GraphQL Schema (SDL)
+schema {
+  query: Query
+  mutation: Mutation
+  subscription: Subscription
+}
+
+"""Top-level query type"""
+type Query {
+  user(id: ID!): User
+  users(filter: UserFilter, limit: Int = 10): [User!]!
+  search(query: String!): [SearchResult!]!
+}
+
+type Mutation {
+  createUser(input: CreateUserInput!): User!
+  deleteUser(id: ID!): Boolean!
+}
+
+type Subscription {
+  userUpdated(id: ID!): User!
+}
+
+interface Node {
+  id: ID!
+}
+
+type User implements Node {
+  id: ID!
+  name: String!
+  email: String! @deprecated(reason: "Use 'contactEmail'")
+  contactEmail: String
+  role: Role!
+  posts: [Post!]!
+}
+
+type Post implements Node {
+  id: ID!
+  title: String!
+  body: String
+  author: User!
+  tags: [String!]
+}
+
+union SearchResult = User | Post
+
+enum Role {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+input UserFilter {
+  name: String
+  role: Role
+  active: Boolean = true
+}
+
+input CreateUserInput {
+  name: String!
+  email: String!
+  role: Role = VIEWER
+}
+
+scalar DateTime
+
+directive @auth(requires: Role = VIEWER) on FIELD_DEFINITION | OBJECT`;
+    onInput();
+    format();
+  }
+
+  function clearAll() {
+    inputEl.value = '';
+    outputEl.innerHTML = '<span style="color:var(--text-muted);font-style:italic;padding:8px;display:block;">-- output will appear here --</span>';
+    window._gqlOutput = '';
+    onInput();
+    updateLineNumbers(outputLines, '');
+    outputCount.textContent = '0 lines';
+    statusEl.style.display = 'none';
+    outputStatus.style.display = 'none';
+    inputWrap.classList.remove('invalid');
+  }
+
+  function onInput() {
+    updateLineNumbers(inputLines, inputEl.value);
+    updateInputCount();
+  }
+
+  /* ---------- Wire up ---------- */
+  document.getElementById('btnFormat').addEventListener('click', format);
+  document.getElementById('btnMinify').addEventListener('click', minify);
+  document.getElementById('btnValidate').addEventListener('click', validate);
+  document.getElementById('btnSample').addEventListener('click', loadSampleQuery);
+  document.getElementById('btnSampleSchema').addEventListener('click', loadSampleSchema);
+  document.getElementById('btnClear').addEventListener('click', clearAll);
+  document.getElementById('btnCopy').addEventListener('click', e => copyOutput(e.target));
+  document.getElementById('btnDownload').addEventListener('click', download);
+
+  inputEl.addEventListener('input', onInput);
+  inputEl.addEventListener('scroll', () => syncScroll(inputEl, inputLines));
+  outputEl.addEventListener('scroll', () => syncScroll(outputEl, outputLines));
+
+  // Make output focusable
+outputEl.setAttribute('tabindex', '0');
+
+outputEl.addEventListener('keydown', e => {
+  // Only react if the output element itself (or one of its descendants) has focus
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+    // Only act when focus is inside the output panel
+    if (!outputEl.contains(document.activeElement) && document.activeElement !== outputEl) {
+      return; // let the default Ctrl+A run (e.g., if focus is in the textarea)
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    const r = document.createRange();
+    r.selectNodeContents(outputEl);
+    const s = window.getSelection();
+    s.removeAllRanges();
+    s.addRange(r);
+  }
+});
+
+// Click anywhere in the output to focus it (so Ctrl+A works)
+outputEl.addEventListener('mousedown', () => {
+  // Focus on next tick so the click's own selection happens first
+  setTimeout(() => outputEl.focus(), 0);
+});
+
+  onInput();
+  updateLineNumbers(outputLines, '');
+});
+</script>
+</body>
+</html>

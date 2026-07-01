@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>XML Formatter & Validator Online Tool</title>
+
+  <!-- Empty favicon to avoid file:// path issues -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><defs><linearGradient id='g' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='%234f8cff'/><stop offset='1' stop-color='%23764ba2'/></linearGradient></defs><rect width='64' height='64' rx='14' fill='url(%23g)'/><text x='10' y='44' font-family='Consolas,monospace' font-size='34' font-weight='bold' fill='white'>&lt;</text><circle cx='32' cy='28' r='2.5' fill='%23ffd966'/><circle cx='32' cy='36' r='2.5' fill='%2381e6a8'/><text x='38' y='44' font-family='Consolas,monospace' font-size='34' font-weight='bold' fill='white'>&gt;</text></svg>" />
+
+<style>
+  :root {
+    --bg: #f0f2f5;
+    --bg-gradient: linear-gradient(135deg, #f0f2f5 0%, #e6e9f0 100%);
+    --card-bg: #ffffff;
+    --text: #1a1a2e;
+    --text-muted: #666;
+    --hint: #999;
+    --border: #e5e7eb;
+    --border-strong: #ddd;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --danger: #dc2626;
+    --success: #059669;
+    --success-hover: #047857;
+    --empty: #16a34a;
+    --gutter-bg: #f6f8fa;
+    --gutter-text: #8b949e;
+    --gutter-border: #d0d7de;
+    --switch-off: #cbd5e1;
+    --shadow: 0 4px 20px rgba(0,0,0,0.06);
+    --shadow-hover: 0 6px 24px rgba(0,0,0,0.10);
+
+    --xml-tag: #2563eb;
+    --xml-attr: #b45309;
+    --xml-value: #059669;
+    --xml-comment: #6b7280;
+    --xml-cdata: #7c3aed;
+    --xml-decl: #db2777;
+    --xml-text: #1a1a2e;
+  }
+  [data-theme="dark"] {
+    --bg: #0f172a;
+    --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    --card-bg: #1e293b;
+    --text: #f1f5f9;
+    --text-muted: #cbd5e1;
+    --hint: #94a3b8;
+    --border: #334155;
+    --border-strong: #475569;
+    --primary: #3b82f6;
+    --primary-hover: #60a5fa;
+    --danger: #f87171;
+    --success: #10b981;
+    --success-hover: #059669;
+    --empty: #4ade80;
+    --gutter-bg: #161f31;
+    --gutter-text: #6e7681;
+    --gutter-border: #30363d;
+    --switch-off: #475569;
+    --shadow: 0 4px 20px rgba(0,0,0,0.4);
+    --shadow-hover: 0 6px 24px rgba(0,0,0,0.5);
+
+    --xml-tag: #60a5fa;
+    --xml-attr: #fbbf24;
+    --xml-value: #4ade80;
+    --xml-comment: #94a3b8;
+    --xml-cdata: #c084fc;
+    --xml-decl: #f472b6;
+    --xml-text: #f1f5f9;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Segoe UI', Tahoma, sans-serif;
+    background: var(--bg-gradient);
+    padding: 20px;
+    color: var(--text);
+    transition: background 0.3s ease, color 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  .container {
+    max-width: 1700px;
+    margin: 0 auto;
+    width: 100%;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  h1 {
+    text-align: center;
+    margin-bottom: 4px;
+    font-size: 1.6rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--primary), var(--danger));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    flex-shrink: 0;
+  }
+  .subtitle {
+    text-align: center;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+  .top-actions {
+    position: fixed;
+    top: 16px; right: 16px;
+    display: flex; gap: 8px;
+    z-index: 100;
+  }
+  .icon-btn {
+    background: var(--card-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s, box-shadow 0.2s;
+    padding: 0;
+  }
+  .icon-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+
+  .options-bar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    background: var(--card-bg);
+    padding: 10px 18px;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    margin: 0 auto 10px;
+    max-width: fit-content;
+    flex-shrink: 0;
+  }
+  .toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.85rem;
+    color: var(--text);
+  }
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 36px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: var(--switch-off);
+    transition: 0.3s;
+    border-radius: 20px;
+  }
+  .slider::before {
+    content: "";
+    position: absolute;
+    height: 14px; width: 14px;
+    left: 3px; bottom: 3px;
+    background: #fff;
+    transition: 0.3s;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .switch input:checked + .slider { background: var(--primary); }
+  .switch input:checked + .slider::before { transform: translateX(16px); }
+  .toggle-icon { font-size: 0.95rem; }
+
+  .opt-select {
+    font-size: 0.85em;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border-strong);
+    background: var(--card-bg);
+    color: var(--text);
+    font-family: inherit;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .opt-select:focus { border-color: var(--primary); }
+
+  .btn-row {
+    text-align: center;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+  button.primary-btn,
+  button.secondary-btn,
+  button.warn-btn,
+  button.violet-btn {
+    color: #fff; border: none;
+    padding: 9px 22px;
+    font-size: 0.9rem;
+    border-radius: 7px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+    box-shadow: var(--shadow);
+  }
+  .primary-btn { background: var(--primary); }
+  .primary-btn:hover { background: var(--primary-hover); box-shadow: var(--shadow-hover); }
+  .secondary-btn { background: var(--text-muted); }
+  .secondary-btn:hover { opacity: 0.85; }
+  .warn-btn { background: var(--success); }
+  .warn-btn:hover { background: var(--success-hover); }
+  .violet-btn { background: #7c3aed; }
+  .violet-btn:hover { background: #6d28d9; }
+  button:active { transform: scale(0.97); }
+
+  /* Grid fills available height */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .panel {
+    display: flex;
+    flex-direction: column;
+    background: var(--card-bg);
+    padding: 12px;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    transition: background 0.3s, box-shadow 0.2s;
+    min-width: 0;
+    min-height: 0;
+  }
+  .panel:hover { box-shadow: var(--shadow-hover); }
+
+  .panel-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px; flex-wrap: wrap; gap: 8px;
+    flex-shrink: 0;
+  }
+  .panel-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
+  }
+  .panel-title {
+    font-weight: 700;
+    font-size: 0.92rem;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .panel-title.readonly { cursor: default; }
+  .title-input {
+    font-weight: 700;
+    font-size: 0.92rem;
+    padding: 2px 6px;
+    border: 2px solid var(--primary);
+    border-radius: 4px;
+    background: var(--card-bg);
+    color: var(--text);
+    font-family: inherit;
+    outline: none;
+    width: 100%;
+    min-width: 60px;
+  }
+  .edit-icon {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background 0.15s, color 0.15s;
+    opacity: 0.6;
+  }
+  .edit-icon:hover {
+    background: var(--bg);
+    color: var(--text);
+    opacity: 1;
+  }
+  .label-1 { color: var(--primary); }
+  .label-2 { color: var(--danger); }
+
+  /* Code box fills the rest of the panel */
+  .code-box {
+    display: flex;
+    border: 2px solid var(--border-strong);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--card-bg);
+    transition: border-color 0.2s;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+  .code-box:focus-within { border-color: var(--primary); }
+  .code-box.error { border-color: var(--danger); }
+
+  .gutter {
+    flex: 0 0 auto;
+    min-width: 48px;
+    padding: 12px 8px 12px 10px;
+    background: var(--gutter-bg);
+    color: var(--gutter-text);
+    border-right: 1px solid var(--gutter-border);
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    text-align: right;
+    user-select: none;
+    pointer-events: none;
+    white-space: pre;
+    overflow: hidden;
+    transition: background 0.3s, color 0.3s;
+  }
+  .code-content {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    overflow: hidden;
+  }
+
+  textarea.code-input {
+    width: 100%;
+    height: 100%;
+    padding: 12px;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    resize: none;
+    outline: none;
+    overflow: auto;
+    white-space: pre;
+    display: block;
+    tab-size: 2;
+    flex: 1 1 auto;
+  }
+
+  .result-content {
+    padding: 12px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--text);
+    overflow: auto;
+    white-space: pre;
+    tab-size: 2;
+    flex: 1 1 auto;
+    width: 100%;
+    height: 100%;
+  }
+
+  .xml-tag       { color: var(--xml-tag); font-weight: 600; }
+  .xml-attr      { color: var(--xml-attr); }
+  .xml-value     { color: var(--xml-value); }
+  .xml-comment   { color: var(--xml-comment); font-style: italic; }
+  .xml-cdata     { color: var(--xml-cdata); }
+  .xml-decl      { color: var(--xml-decl); font-weight: 600; }
+  .xml-bracket   { color: var(--text-muted); }
+
+  .empty-msg {
+    color: var(--empty);
+    font-style: italic;
+    white-space: normal;
+    display: block;
+    padding: 4px 6px;
+  }
+  .error-msg {
+    color: var(--danger);
+    white-space: pre-wrap;
+    display: block;
+    padding: 8px 10px;
+    background: rgba(220, 38, 38, 0.08);
+    border-left: 3px solid var(--danger);
+    border-radius: 4px;
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+  .success-banner {
+    color: var(--success);
+    background: rgba(5, 150, 105, 0.08);
+    border-left: 3px solid var(--success);
+    padding: 8px 10px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    display: block;
+    font-weight: 600;
+  }
+
+  .hint { font-size: 0.72rem; color: var(--hint); margin-top: 4px; flex-shrink: 0; }
+  .badge {
+    background: var(--primary); color: #fff;
+    border-radius: 20px;
+    padding: 2px 9px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .badge-red { background: var(--danger); }
+  .badge-green { background: var(--success); }
+
+  .copy-btn {
+    background: var(--success); color: #fff;
+    border: none;
+    padding: 4px 12px;
+    font-size: 0.78rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .copy-btn:hover { background: var(--success-hover); }
+  .download-btn {
+    background: var(--primary); color: #fff;
+    border: none;
+    padding: 4px 12px;
+    font-size: 0.78rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .download-btn:hover { background: var(--primary-hover); }
+
+  #scroll-top {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--primary); color: #fff;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-weight: 600;
+    box-shadow: var(--shadow-hover);
+    opacity: 0; visibility: hidden;
+    transform: translateY(20px);
+    transition: opacity 0.3s, transform 0.3s, visibility 0.3s, background 0.2s;
+    z-index: 99;
+    font-size: 0.9rem;
+  }
+  #scroll-top.show { opacity: 1; visibility: visible; transform: translateY(0); }
+  #scroll-top:hover { background: var(--primary-hover); }
+
+  @media (max-width: 1000px) {
+    .grid { grid-template-columns: 1fr; }
+    body, html { height: auto; min-height: 100vh; }
+  }
+  @media (max-width: 700px)  { h1 { font-size: 1.3rem; } }
+</style>
+</head>
+<body>
+
+<div class="top-actions">
+  <button class="icon-btn" id="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle theme">🌙</button>
+</div>
+
+<div class="container" id="top">
+  <h1>XML Formatter &amp; Validator</h1>
+  <p class="subtitle">
+    Format, beautify, minify, and validate your XML — including declarations, comments, CDATA, and processing instructions.<br>
+    <span style="color:var(--hint);font-size:0.85em;">All processing happens locally in your browser. Nothing is uploaded.</span>
+  </p>
+
+  <div class="options-bar">
+    <label class="toggle-wrap" title="Indentation size for formatted output">
+      <span class="toggle-icon">📏</span>
+      <span>Indent</span>
+      <select id="opt-indent" class="opt-select">
+        <option value="2">2 spaces</option>
+        <option value="4">4 spaces</option>
+        <option value="tab">Tab</option>
+      </select>
+    </label>
+    <label class="toggle-wrap" title="Preserve whitespace inside text nodes (recommended for content with meaningful spaces)">
+      <span class="toggle-icon">␣</span>
+      <span>Preserve text whitespace</span>
+      <span class="switch">
+        <input type="checkbox" id="opt-preserve">
+        <span class="slider"></span>
+      </span>
+    </label>
+    <label class="toggle-wrap" title="Sort attributes alphabetically on each element">
+      <span class="toggle-icon">🔤</span>
+      <span>Sort attributes</span>
+      <span class="switch">
+        <input type="checkbox" id="opt-sortattr">
+        <span class="slider"></span>
+      </span>
+    </label>
+    <label class="toggle-wrap" title="Decode &lt; and &gt; entities inside text/CDATA, then re-format the embedded XML with proper indentation">
+      <span class="toggle-icon">🔓</span>
+      <span>Decode embedded XML</span>
+      <span class="switch">
+        <input type="checkbox" id="opt-decode">
+        <span class="slider"></span>
+      </span>
+    </label>
+    <label class="toggle-wrap" title="Apply syntax colors to the output">
+      <span class="toggle-icon">🎨</span>
+      <span>Syntax highlight</span>
+      <span class="switch">
+        <input type="checkbox" id="opt-highlight" checked>
+        <span class="slider"></span>
+      </span>
+    </label>
+  </div>
+
+  <div class="btn-row">
+    <button class="primary-btn" onclick="formatXml()">✨ Format / Beautify</button>
+    <button class="warn-btn" onclick="minifyXml()">🗜️ Minify</button>
+    <button class="violet-btn" onclick="validateXml()">✓ Validate</button>
+    <button class="secondary-btn" onclick="loadSample()">📄 Sample</button>
+    <button class="secondary-btn" onclick="clearInput()">🗑️ Clear</button>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title-wrap">
+          <span class="panel-title label-1" id="input-title" onclick="startEditTitle()" title="Click to rename">Input XML</span>
+          <button class="edit-icon" onclick="startEditTitle()" title="Rename input" aria-label="Rename input">✏️</button>
+        </div>
+        <span class="badge" id="input-count">0 lines</span>
+      </div>
+      <div class="code-box" id="input-box">
+        <div class="gutter" id="input-gutter">1</div>
+        <div class="code-content">
+          <textarea id="input" class="code-input"
+            placeholder="Paste your XML here..."
+            spellcheck="false"
+            oninput="onInputChange()"></textarea>
+        </div>
+      </div>
+      <p class="hint" id="input-hint">Supports XML declarations, comments, CDATA, and processing instructions.</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title label-2 readonly" id="result-title">Output</span>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <span class="badge badge-green" id="output-status" style="display:none;">Valid</span>
+          <button class="copy-btn" onclick="copyResults(this)" title="Copy results">📋 Copy</button>
+          <button class="download-btn" onclick="downloadResults()" title="Download results">⬇️ Download</button>
+        </div>
+      </div>
+      <div class="code-box">
+        <div class="gutter" id="output-gutter">&nbsp;</div>
+        <div class="code-content">
+          <div id="result-box" class="result-content"><span class="empty-msg">-- output will appear here --</span></div>
+        </div>
+      </div>
+      <p class="hint" id="result-hint">Click <b>Format</b>, <b>Minify</b>, or <b>Validate</b> to process your XML.</p>
+    </div>
+  </div>
+</div>
+
+<button id="scroll-top" onclick="scrollToTop()" title="Scroll to top">↑ Top</button>
+
+<script>
+/* ---------- Theme ---------- */
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('theme-toggle');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'light' ? 'dark' : 'light';
+  applyTheme(next);
+  try { localStorage.setItem('xmlFmtTheme', next); } catch (e) {}
+}
+
+(function earlyTheme() {
+  let saved = 'light';
+  try { saved = localStorage.getItem('xmlFmtTheme') || 'light'; } catch (e) {}
+  document.documentElement.setAttribute('data-theme', saved);
+})();
+
+/* ---------- Editable title ---------- */
+const DEFAULT_INPUT_TITLE = "Input XML";
+function startEditTitle() {
+  const titleEl = document.getElementById('input-title');
+  if (!titleEl || titleEl.tagName === 'INPUT') return;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.id = 'input-title';
+  input.className = 'title-input';
+  input.value = titleEl.textContent;
+  input.maxLength = 40;
+  titleEl.replaceWith(input);
+  input.focus(); input.select();
+  let finalized = false;
+  const finalize = (commit) => {
+    if (finalized) return;
+    finalized = true;
+    const newName = commit ? input.value.trim() : DEFAULT_INPUT_TITLE;
+    const span = document.createElement('span');
+    span.className = 'panel-title label-1';
+    span.id = 'input-title';
+    span.title = "Click to rename";
+    span.textContent = newName.length ? newName : DEFAULT_INPUT_TITLE;
+    span.onclick = startEditTitle;
+    input.replaceWith(span);
+  };
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); finalize(true); }
+    else if (e.key === 'Escape') { e.preventDefault(); finalize(false); }
+  });
+  input.addEventListener('blur', () => finalize(true));
+}
+
+/* ---------- Input gutter / autogrow ---------- */
+function updateGutter() {
+  const ta = document.getElementById('input');
+  const gutter = document.getElementById('input-gutter');
+  if (!ta || !gutter) return;
+  const lines = ta.value.split('\n').length || 1;
+  let nums = '';
+  for (let i = 1; i <= lines; i++) nums += i + '\n';
+  gutter.textContent = nums.replace(/\n$/, '');
+  autoGrow(ta);
+}
+function autoGrow(ta) {
+  // No-op: textarea now uses 100% height via flex layout
+  // The flex container handles sizing; we let the browser scroll internally.
+  return;
+}
+function onInputChange() {
+  updateGutter();
+  updateInputCount();
+  saveInput();
+}
+function updateInputCount() {
+  const ta = document.getElementById('input');
+  const badge = document.getElementById('input-count');
+  if (!ta || !badge) return;
+  const lines = ta.value.length === 0 ? 0 : ta.value.split('\n').length;
+  badge.textContent = lines + (lines === 1 ? ' line' : ' lines');
+}
+function saveInput() {
+  const ta = document.getElementById('input');
+  if (!ta) return;
+  try { localStorage.setItem('xmlFmtInput', ta.value); } catch (e) {}
+}
+function clearInput() {
+  const ta = document.getElementById('input');
+  if (ta) ta.value = '';
+  onInputChange();
+  resetOutput();
+}
+function resetOutput() {
+  const box = document.getElementById('result-box');
+  const gutter = document.getElementById('output-gutter');
+  const status = document.getElementById('output-status');
+  const inputBox = document.getElementById('input-box');
+  if (box) box.innerHTML = "<span class='empty-msg'>-- output will appear here --</span>";
+  if (gutter) gutter.textContent = '';
+  if (status) status.style.display = 'none';
+  if (inputBox) inputBox.classList.remove('error');
+}
+
+/* ---------- Sample ---------- */
+function loadSample() {
+  const sample =
+`<?xml version="1.0" encoding="UTF-8"?>
+<Envelope>
+    <Header>
+        <CorrelationId>abc-123-xyz</CorrelationId>
+    </Header>
+    <Body>
+        <Transaction>
+            <RequestPayload><![CDATA[
+<CustomerRequest>
+    <CustomerId>1001</CustomerId>
+    <Name>John Doe</Name>
+    <Profile>
+        &lt;ProfileData&gt;
+            &lt;Email&gt;john@example.com&lt;/Email&gt;
+            &lt;Preferences&gt;
+                &lt;Theme&gt;Dark&lt;/Theme&gt;
+                &lt;Language&gt;EN&lt;/Language&gt;
+            &lt;/Preferences&gt;
+        &lt;/ProfileData&gt;
+    </Profile>
+</CustomerRequest>
+            ]]></RequestPayload>
+            <AuditLog>
+                Processing Started&#10;
+                Validation Passed&#13;&#10;
+                Response Generated
+            </AuditLog>
+            <StackTrace><![CDATA[
+java.lang.RuntimeException: Invalid payload
+    at com.example.Service.process(Service.java:45)
+    at com.example.Main.main(Main.java:10)
+            ]]></StackTrace>
+        </Transaction>
+    </Body>
+</Envelope>`;
+  const ta = document.getElementById('input');
+  if (ta) ta.value = sample;
+  onInputChange();
+}
+
+/* ============================================================
+   XML TOKENIZER
+   ============================================================ */
+function tokenizeXml(xml) {
+  const tokens = [];
+  let i = 0;
+  const len = xml.length;
+
+  while (i < len) {
+    if (xml[i] === '<') {
+      if (xml.startsWith('<?xml', i) && /[\s?]/.test(xml[i + 5] || '')) {
+        const end = xml.indexOf('?>', i);
+        if (end === -1) throw new Error("Unterminated XML declaration at position " + i);
+        tokens.push({ type: 'decl', value: xml.substring(i, end + 2) });
+        i = end + 2;
+      }
+      else if (xml.startsWith('<?', i)) {
+        const end = xml.indexOf('?>', i);
+        if (end === -1) throw new Error("Unterminated processing instruction at position " + i);
+        tokens.push({ type: 'pi', value: xml.substring(i, end + 2) });
+        i = end + 2;
+      }
+      else if (xml.startsWith('<!--', i)) {
+        const end = xml.indexOf('-->', i);
+        if (end === -1) throw new Error("Unterminated comment starting at position " + i);
+        tokens.push({ type: 'comment', value: xml.substring(i, end + 3) });
+        i = end + 3;
+      }
+      else if (xml.startsWith('<![CDATA[', i)) {
+        const end = xml.indexOf(']]>', i);
+        if (end === -1) throw new Error("Unterminated CDATA section at position " + i);
+        tokens.push({ type: 'cdata', value: xml.substring(i, end + 3) });
+        i = end + 3;
+      }
+      else if (xml.startsWith('<!DOCTYPE', i) || xml.startsWith('<!doctype', i)) {
+        let depth = 0;
+        let j = i;
+        while (j < len) {
+          if (xml[j] === '[') depth++;
+          else if (xml[j] === ']') depth--;
+          else if (xml[j] === '>' && depth <= 0) break;
+          j++;
+        }
+        if (j >= len) throw new Error("Unterminated DOCTYPE declaration");
+        tokens.push({ type: 'doctype', value: xml.substring(i, j + 1) });
+        i = j + 1;
+      }
+      else if (xml[i + 1] === '/') {
+        const end = xml.indexOf('>', i);
+        if (end === -1) throw new Error("Unterminated closing tag at position " + i);
+        tokens.push({ type: 'close', value: xml.substring(i, end + 1) });
+        i = end + 1;
+      }
+      else {
+        let j = i + 1;
+        let inQuote = null;
+        while (j < len) {
+          const ch = xml[j];
+          if (inQuote) {
+            if (ch === inQuote) inQuote = null;
+          } else {
+            if (ch === '"' || ch === "'") inQuote = ch;
+            else if (ch === '>') break;
+          }
+          j++;
+        }
+        if (j >= len) throw new Error("Unterminated tag at position " + i);
+        const raw = xml.substring(i, j + 1);
+        const isSelf = raw.endsWith('/>');
+        tokens.push({ type: isSelf ? 'self' : 'open', value: raw });
+        i = j + 1;
+      }
+    } else {
+      const next = xml.indexOf('<', i);
+      const textChunk = next === -1 ? xml.substring(i) : xml.substring(i, next);
+      if (textChunk.length > 0) tokens.push({ type: 'text', value: textChunk });
+      if (next === -1) break;
+      i = next;
+    }
+  }
+  return tokens;
+}
+
+function parseTagAttrs(raw) {
+  let inner = raw.slice(1, raw.endsWith('/>') ? -2 : -1).trim();
+  const nameMatch = inner.match(/^([^\s/>]+)/);
+  if (!nameMatch) throw new Error("Invalid tag: " + raw);
+  const name = nameMatch[1];
+  let rest = inner.substring(name.length).trim();
+
+  const attrs = [];
+  const attrRegex = /([^\s=/>]+)\s*=\s*("([^"]*)"|'([^']*)')/g;
+  let m;
+  while ((m = attrRegex.exec(rest)) !== null) {
+    const attrName = m[1];
+    const quote = m[2][0];
+    const attrVal = m[3] !== undefined ? m[3] : m[4];
+    attrs.push({ name: attrName, value: attrVal, quote });
+  }
+  return { name, attrs };
+}
+
+function buildTag(name, attrs, selfClose, sortAttrs) {
+  let list = attrs.slice();
+  if (sortAttrs) list.sort((a, b) => a.name.localeCompare(b.name));
+  let s = '<' + name;
+  for (const a of list) {
+    s += ' ' + a.name + '=' + a.quote + a.value + a.quote;
+  }
+  s += selfClose ? '/>' : '>';
+  return s;
+}
+
+function findMatchingClose(tokens, openIdx) {
+  const openName = parseTagAttrs(tokens[openIdx].value).name;
+  let depth = 1;
+  for (let k = openIdx + 1; k < tokens.length; k++) {
+    const t = tokens[k];
+    if (t.type === 'open') {
+      const n = parseTagAttrs(t.value).name;
+      if (n === openName) depth++;
+    } else if (t.type === 'close') {
+      const m = t.value.match(/^<\/([^\s>]+)/);
+      if (m && m[1] === openName) {
+        depth--;
+        if (depth === 0) return k;
+      }
+    }
+  }
+  return -1;
+}
+
+function classifyContent(tokens, openIdx, closeIdx, opts) {
+  const inner = tokens.slice(openIdx + 1, closeIdx);
+  if (inner.length === 0) return 'empty';
+
+  let hasChild = false;
+  let hasNonWsText = false;
+  let hasMultilineText = false;
+  let hasCdataOrComment = false;
+
+  for (const t of inner) {
+    if (t.type === 'text') {
+      if (t.value.trim().length > 0) {
+        hasNonWsText = true;
+        if (/\n/.test(t.value)) hasMultilineText = true;
+      }
+    } else if (t.type === 'open' || t.type === 'self') {
+      hasChild = true;
+    } else if (t.type === 'cdata' || t.type === 'comment' || t.type === 'pi') {
+      hasCdataOrComment = true;
+    }
+  }
+
+  if (hasNonWsText && (hasChild || hasCdataOrComment)) return 'preserve';
+  if (hasNonWsText && !hasChild && !hasCdataOrComment) {
+    if (hasMultilineText) return 'preserve';
+    return 'simple';
+  }
+  if (!hasChild && hasCdataOrComment && !hasNonWsText) return 'preserve';
+  return 'block';
+}
+
+function rawInner(tokens, openIdx, closeIdx) {
+  let s = '';
+  for (let k = openIdx + 1; k < closeIdx; k++) {
+    s += tokens[k].value;
+  }
+  return s;
+}
+
+/* ---------- Entity decoder & embedded XML formatter ---------- */
+function decodeEntities(s) {
+  return String(s)
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)))
+    .replace(/&amp;/g, '&');
+}
+
+function looksLikeEscapedXml(s) {
+  return /&lt;\/?[a-zA-Z_][\w:.-]*[\s\S]*?&gt;/.test(s);
+}
+
+function looksLikeRealXml(s) {
+  return /<\/?[a-zA-Z_][\w:.-]*[\s\S]*?>/.test(s);
+}
+
+function tryFormatEmbeddedXml(rawText, indent, opts, baseDepth) {
+  let decoded = decodeEntities(rawText);
+  decoded = decoded.replace(/^\s+|\s+$/g, '');
+  if (!decoded || !decoded.startsWith('<')) return null;
+
+  let toParse = decoded;
+  let wrapped = false;
+
+  let v = validateWithDomParser(toParse);
+  if (!v.valid) {
+    toParse = '<__embedded_root__>' + decoded + '</__embedded_root__>';
+    v = validateWithDomParser(toParse);
+    if (!v.valid) return null;
+    wrapped = true;
+  }
+
+  let tokens;
+  try { tokens = tokenizeXml(toParse); } catch (e) { return null; }
+
+  let formatted;
+  try { formatted = formatTokens(tokens, indent, opts); } catch (e) { return null; }
+
+  if (wrapped) {
+    const lines = formatted.split('\n');
+    if (lines.length >= 2) {
+      lines.shift(); lines.pop();
+      formatted = lines.map(l => l.startsWith(indent) ? l.slice(indent.length) : l).join('\n');
+    }
+  }
+
+  const padBase = indent.repeat(Math.max(0, baseDepth));
+  formatted = formatted.split('\n').map(l => l.length ? padBase + l : l).join('\n');
+  return formatted;
+}
+
+/* ============================================================
+   FORMATTER
+   ============================================================ */
+function formatTokens(tokens, indent, opts) {
+  const out = [];
+  const pad = (n) => indent.repeat(Math.max(0, n));
+  function emit(line) { out.push(line); }
+
+  function walk(start, end, depth) {
+    let i = start;
+    while (i < end) {
+      const tk = tokens[i];
+
+      if (tk.type === 'decl' || tk.type === 'pi' || tk.type === 'doctype' || tk.type === 'comment') {
+        emit(pad(depth) + tk.value);
+        i++;
+      }
+      else if (tk.type === 'cdata') {
+        if (opts.decode) {
+          const inside = tk.value.slice(9, -3);
+          if (looksLikeRealXml(inside) || looksLikeEscapedXml(inside)) {
+            const reformatted = tryFormatEmbeddedXml(inside, indent, opts, depth + 1);
+            if (reformatted) {
+              emit(pad(depth) + '<![CDATA[');
+              emit(reformatted);
+              emit(pad(depth) + ']]>');
+              i++;
+              continue;
+            }
+          }
+        }
+        emit(pad(depth) + tk.value);
+        i++;
+      }
+      else if (tk.type === 'self') {
+        const parsed = parseTagAttrs(tk.value);
+        emit(pad(depth) + buildTag(parsed.name, parsed.attrs, true, opts.sortAttrs));
+        i++;
+      }
+      else if (tk.type === 'open') {
+        const closeIdx = findMatchingClose(tokens, i);
+        if (closeIdx === -1) {
+          const parsed = parseTagAttrs(tk.value);
+          emit(pad(depth) + buildTag(parsed.name, parsed.attrs, false, opts.sortAttrs));
+          i++;
+          continue;
+        }
+
+        const parsed = parseTagAttrs(tk.value);
+        const tagOpen = buildTag(parsed.name, parsed.attrs, false, opts.sortAttrs);
+        const tagClose = '</' + parsed.name + '>';
+
+        const kind = classifyContent(tokens, i, closeIdx, opts);
+
+        if (kind === 'empty') {
+          emit(pad(depth) + tagOpen + tagClose);
+        }
+        else if (kind === 'simple') {
+          const textTok = tokens.slice(i + 1, closeIdx).find(t => t.type === 'text');
+          let textVal = textTok ? textTok.value.trim() : '';
+          if (opts.decode && looksLikeEscapedXml(textVal)) {
+            const reformatted = tryFormatEmbeddedXml(textVal, indent, opts, depth + 1);
+            if (reformatted) {
+              emit(pad(depth) + tagOpen);
+              emit(reformatted);
+              emit(pad(depth) + tagClose);
+              i = closeIdx + 1;
+              continue;
+            }
+          }
+          emit(pad(depth) + tagOpen + textVal + tagClose);
+        }
+        else if (kind === 'preserve') {
+          const innerRaw = rawInner(tokens, i, closeIdx);
+          if (opts.decode && looksLikeEscapedXml(innerRaw) && !looksLikeRealXml(innerRaw)) {
+            const reformatted = tryFormatEmbeddedXml(innerRaw, indent, opts, depth + 1);
+            if (reformatted) {
+              emit(pad(depth) + tagOpen);
+              emit(reformatted);
+              emit(pad(depth) + tagClose);
+              i = closeIdx + 1;
+              continue;
+            }
+          }
+          if (opts.decode) {
+            emit(pad(depth) + tagOpen);
+            walkPreservedWithDecode(i + 1, closeIdx, depth + 1);
+            emit(pad(depth) + tagClose);
+            i = closeIdx + 1;
+            continue;
+          }
+          emit(pad(depth) + tagOpen + innerRaw + tagClose);
+        }
+        else {
+          emit(pad(depth) + tagOpen);
+          walk(i + 1, closeIdx, depth + 1);
+          emit(pad(depth) + tagClose);
+        }
+        i = closeIdx + 1;
+      }
+      else if (tk.type === 'close') {
+        emit(pad(depth) + tk.value);
+        i++;
+      }
+      else if (tk.type === 'text') {
+        const trimmed = tk.value.trim();
+        if (trimmed.length > 0) {
+          if (opts.decode && looksLikeEscapedXml(trimmed)) {
+            const reformatted = tryFormatEmbeddedXml(trimmed, indent, opts, depth);
+            if (reformatted) { emit(reformatted); i++; continue; }
+          }
+          emit(pad(depth) + trimmed);
+        }
+        i++;
+      }
+      else { i++; }
+    }
+  }
+
+  function walkPreservedWithDecode(start, end, depth) {
+    let i = start;
+    while (i < end) {
+      const tk = tokens[i];
+      if (tk.type === 'cdata') {
+        const inside = tk.value.slice(9, -3);
+        if (opts.decode && (looksLikeRealXml(inside) || looksLikeEscapedXml(inside))) {
+          const reformatted = tryFormatEmbeddedXml(inside, indent, opts, depth + 1);
+          if (reformatted) {
+            emit(pad(depth) + '<![CDATA[');
+            emit(reformatted);
+            emit(pad(depth) + ']]>');
+            i++;
+            continue;
+          }
+        }
+        emit(pad(depth) + tk.value);
+        i++;
+      } else if (tk.type === 'text') {
+        const trimmed = tk.value.trim();
+        if (trimmed.length === 0) { i++; continue; }
+        if (opts.decode && looksLikeEscapedXml(trimmed)) {
+          const reformatted = tryFormatEmbeddedXml(trimmed, indent, opts, depth);
+          if (reformatted) { emit(reformatted); i++; continue; }
+        }
+        emit(pad(depth) + trimmed);
+        i++;
+      } else if (tk.type === 'open') {
+        const closeIdx = findMatchingClose(tokens, i);
+        if (closeIdx === -1) { emit(pad(depth) + tk.value); i++; continue; }
+        walk(i, closeIdx + 1, depth);
+        i = closeIdx + 1;
+      } else {
+        emit(pad(depth) + tk.value);
+        i++;
+      }
+    }
+  }
+
+  walk(0, tokens.length, 0);
+  return out.join('\n');
+}
+
+/* ============================================================
+   MINIFIER
+   ============================================================ */
+function minifyTokens(tokens, opts) {
+  const out = [];
+
+  function rawTokenStr(t) {
+    if (t.type === 'open' || t.type === 'self') {
+      const parsed = parseTagAttrs(t.value);
+      return buildTag(parsed.name, parsed.attrs, t.type === 'self', opts.sortAttrs);
+    }
+    return t.value;
+  }
+
+  function walk(start, end) {
+    let i = start;
+    while (i < end) {
+      const tk = tokens[i];
+      if (tk.type === 'open') {
+        const closeIdx = findMatchingClose(tokens, i);
+        if (closeIdx === -1) { out.push(rawTokenStr(tk)); i++; continue; }
+
+        const kind = classifyContent(tokens, i, closeIdx, opts);
+        const parsed = parseTagAttrs(tk.value);
+        const tagOpen = buildTag(parsed.name, parsed.attrs, false, opts.sortAttrs);
+        const tagClose = '</' + parsed.name + '>';
+
+        if (kind === 'empty') {
+          out.push(tagOpen + tagClose);
+        } else if (kind === 'simple') {
+          const textTok = tokens.slice(i + 1, closeIdx).find(t => t.type === 'text');
+          const txt = textTok ? textTok.value.trim() : '';
+          out.push(tagOpen + txt + tagClose);
+        } else if (kind === 'preserve') {
+          out.push(tagOpen + rawInner(tokens, i, closeIdx) + tagClose);
+        } else {
+          out.push(tagOpen);
+          walk(i + 1, closeIdx);
+          out.push(tagClose);
+        }
+        i = closeIdx + 1;
+      } else if (tk.type === 'text') {
+        if (tk.value.trim().length === 0) { i++; continue; }
+        out.push(tk.value.trim());
+        i++;
+      } else if (tk.type === 'self') {
+        out.push(rawTokenStr(tk));
+        i++;
+      } else {
+        out.push(tk.value);
+        i++;
+      }
+    }
+  }
+
+  walk(0, tokens.length);
+  return out.join('');
+}
+
+/* ---------- Validation ---------- */
+function validateWithDomParser(xml) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xml, "application/xml");
+  const errNode = doc.getElementsByTagName("parsererror")[0];
+  if (errNode) {
+    return { valid: false, message: errNode.textContent || "Unknown XML parse error" };
+  }
+  return { valid: true };
+}
+
+/* ---------- Syntax highlighting ---------- */
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, ch => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  })[ch]);
+}
+
+function highlightXml(formatted) {
+  let h = escapeHtml(formatted);
+
+  h = h.replace(/(&lt;!--[\s\S]*?--&gt;)/g, '<span class="xml-comment">$1</span>');
+  h = h.replace(/(&lt;!$$CDATA$$[\s\S]*?$$$$&gt;)/g, '<span class="xml-cdata">$1</span>');
+  h = h.replace(/(&lt;\?[\s\S]*?\?&gt;)/g, '<span class="xml-decl">$1</span>');
+  h = h.replace(/(&lt;!DOCTYPE[\s\S]*?&gt;)/gi, '<span class="xml-decl">$1</span>');
+
+  h = h.replace(/(&lt;\/?)([a-zA-Z_][\w:.-]*)((?:\s+[^&]*?)?)(\/?&gt;)/g,
+    function(match, lt, tagName, attrPart, gt, offset, full) {
+      const before = full.substring(Math.max(0, offset - 25), offset);
+      if (/<span class="xml-(comment|cdata|decl)">[^<]*$/.test(before)) {
+        return match;
+      }
+      const attrsHtml = attrPart.replace(
+        /([a-zA-Z_:][\w:.-]*)\s*=\s*(&quot;[\s\S]*?&quot;|&#39;[\s\S]*?&#39;)/g,
+        '<span class="xml-attr">$1</span>=<span class="xml-value">$2</span>'
+      );
+      return '<span class="xml-bracket">' + lt + '</span>' +
+             '<span class="xml-tag">' + tagName + '</span>' +
+             attrsHtml +
+             '<span class="xml-bracket">' + gt + '</span>';
+    });
+
+  return h;
+}
+
+/* ---------- Output rendering ---------- */
+function renderOutput(text, options) {
+  const box = document.getElementById('result-box');
+  const gutter = document.getElementById('output-gutter');
+  if (!box || !gutter) return;
+  const lines = text.split('\n');
+  let nums = '';
+  for (let i = 1; i <= lines.length; i++) nums += i + '\n';
+  gutter.textContent = nums.replace(/\n$/, '');
+
+  if (options && options.highlight) {
+    box.innerHTML = highlightXml(text);
+  } else {
+    box.textContent = text;
+  }
+  window._xmlOutput = text;
+}
+
+function showError(message) {
+  const box = document.getElementById('result-box');
+  const gutter = document.getElementById('output-gutter');
+  const status = document.getElementById('output-status');
+  const inputBox = document.getElementById('input-box');
+  if (box) box.innerHTML = '<div class="error-msg">⚠ ' + escapeHtml(message) + '</div>';
+  if (gutter) gutter.textContent = '';
+  if (status) {
+    status.style.display = 'inline-block';
+    status.textContent = 'Invalid';
+    status.className = 'badge badge-red';
+  }
+  if (inputBox) inputBox.classList.add('error');
+  window._xmlOutput = '';
+}
+
+function showSuccess(label) {
+  const status = document.getElementById('output-status');
+  const inputBox = document.getElementById('input-box');
+  if (status) {
+    status.style.display = 'inline-block';
+    status.textContent = label;
+    status.className = 'badge badge-green';
+  }
+  if (inputBox) inputBox.classList.remove('error');
+}
+
+/* ---------- Public actions ---------- */
+function getOpts() {
+  const indentEl = document.getElementById('opt-indent');
+  const indentVal = indentEl ? indentEl.value : '2';
+  const indent = indentVal === 'tab' ? '\t' : ' '.repeat(parseInt(indentVal, 10));
+  return {
+    indent,
+    preserve: document.getElementById('opt-preserve')?.checked || false,
+    sortAttrs: document.getElementById('opt-sortattr')?.checked || false,
+    highlight: document.getElementById('opt-highlight')?.checked || false,
+    decode: document.getElementById('opt-decode')?.checked || false
+  };
+}
+
+function formatXml() {
+  const ta = document.getElementById('input');
+  if (!ta) return;
+  const xml = ta.value.trim();
+  if (!xml) { showError("Input is empty. Paste some XML first."); return; }
+
+  const v = validateWithDomParser(xml);
+  if (!v.valid) {
+    showError("XML is not well-formed:\n\n" + v.message);
+    return;
+  }
+
+  try {
+    const tokens = tokenizeXml(xml);
+    const opts = getOpts();
+    const formatted = formatTokens(tokens, opts.indent, opts);
+    renderOutput(formatted, opts);
+    showSuccess('Formatted ✓');
+    const hint = document.getElementById('result-hint');
+    if (hint) hint.textContent =
+      'Output: ' + formatted.split('\n').length + ' lines, ' + formatted.length + ' characters.';
+  } catch (e) {
+    showError("Formatting error: " + e.message);
+  }
+}
+
+function minifyXml() {
+  const ta = document.getElementById('input');
+  if (!ta) return;
+  const xml = ta.value.trim();
+  if (!xml) { showError("Input is empty. Paste some XML first."); return; }
+
+  const v = validateWithDomParser(xml);
+  if (!v.valid) {
+    showError("XML is not well-formed:\n\n" + v.message);
+    return;
+  }
+
+  try {
+    const tokens = tokenizeXml(xml);
+    const opts = getOpts();
+    const minified = minifyTokens(tokens, opts);
+    renderOutput(minified, opts);
+    showSuccess('Minified ✓');
+    const original = xml.length;
+    const reduced = minified.length;
+    const pct = original > 0 ? Math.round((1 - reduced / original) * 100) : 0;
+    const hint = document.getElementById('result-hint');
+    if (hint) hint.textContent =
+      'Reduced from ' + original + ' to ' + reduced + ' characters (' + pct + '% smaller).';
+  } catch (e) {
+    showError("Minify error: " + e.message);
+  }
+}
+
+function validateXml() {
+  const ta = document.getElementById('input');
+  if (!ta) return;
+  const xml = ta.value.trim();
+  if (!xml) { showError("Input is empty. Paste some XML first."); return; }
+  const v = validateWithDomParser(xml);
+  if (!v.valid) {
+    showError("XML is NOT well-formed:\n\n" + v.message);
+    const hint = document.getElementById('result-hint');
+    if (hint) hint.textContent = 'Validation failed.';
+    return;
+  }
+  const opts = getOpts();
+  const box = document.getElementById('result-box');
+  if (box) {
+    box.innerHTML = '<div class="success-banner">✓ XML is well-formed and valid.</div>' +
+                    '<div>' + (opts.highlight ? highlightXml(xml) : escapeHtml(xml)) + '</div>';
+  }
+  const gutter = document.getElementById('output-gutter');
+  if (gutter) gutter.textContent = '';
+  showSuccess('Valid ✓');
+  const hint = document.getElementById('result-hint');
+  if (hint) hint.textContent = 'XML is well-formed.';
+  window._xmlOutput = xml;
+}
+
+/* ---------- Copy / Download ---------- */
+function copyResults(btn) {
+  const text = window._xmlOutput || "";
+  if (!text) {
+    const original = btn.textContent;
+    btn.textContent = "Nothing to copy";
+    setTimeout(() => btn.textContent = original, 1500);
+    return;
+  }
+  const done = () => {
+    const original = btn.textContent;
+    btn.textContent = "Copied!";
+    setTimeout(() => btn.textContent = original, 1800);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText)
+    navigator.clipboard.writeText(text).then(done).catch(fallbackCopy);
+  else fallbackCopy();
+  function fallbackCopy() {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+}
+
+function downloadResults() {
+  const text = window._xmlOutput || "";
+  if (!text) return;
+  const blob = new Blob([text], { type: "application/xml" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = "formatted.xml";
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+}
+
+/* ---------- Scroll to top ---------- */
+function scrollToTop() { window.scrollTo({ top: 0, behavior: 'smooth' }); }
+window.addEventListener('scroll', () => {
+  const btn = document.getElementById('scroll-top');
+  if (!btn) return;
+  if (window.scrollY > 300) btn.classList.add('show');
+  else btn.classList.remove('show');
+});
+
+/* ---------- Init ---------- */
+function initApp() {
+  let saved = 'light';
+  try { saved = localStorage.getItem('xmlFmtTheme') || 'light'; } catch (e) {}
+  applyTheme(saved);
+
+  const ta = document.getElementById('input');
+  if (ta) {
+    try {
+      const savedInput = localStorage.getItem('xmlFmtInput');
+      if (typeof savedInput === 'string') ta.value = savedInput;
+    } catch (e) {}
+    updateGutter();
+    updateInputCount();
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
+}
+</script>
+</body>
+</html>

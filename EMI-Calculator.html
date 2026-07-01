@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SPARK EMI Calculator - Advanced Indian Loan Calculator</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230a4fd6'/><text x='50' y='72' font-size='65' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>₹</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #f5f7fb; --surface: #ffffff; --surface-2: #f0f3f9;
+  --text: #1a2236; --text-muted: #5b6478;
+  --primary: #0a4fd6; --primary-hover: #0840a8;
+  --accent: #00b894; --danger: #e74c3c; --warning: #f39c12;
+  --border: #e1e6ef;
+  --shadow: 0 2px 8px rgba(20,30,60,0.06);
+  --shadow-lg: 0 8px 24px rgba(20,30,60,0.08);
+  --radius: 10px;
+}
+[data-theme="dark"] {
+  --bg: #0e1320; --surface: #161d2e; --surface-2: #1f2740;
+  --text: #e6ebf5; --text-muted: #8a93a8;
+  --primary: #4d8af6; --primary-hover: #6ea0f8;
+  --accent: #2ed4a8; --danger: #ff6b5c; --warning: #ffb84d;
+  --border: #2a3350;
+  --shadow: 0 2px 8px rgba(0,0,0,0.25);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.4);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; transition: background 0.2s, color 0.2s; }
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow); }
+header h1 { font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+header h1::before { content: "₹"; background: var(--primary); color: #fff; width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 18px; }
+.header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.container { max-width: 1400px; margin: 0 auto; padding: 20px; display: grid; grid-template-columns: 380px 1fr; gap: 20px; }
+@media (max-width: 1024px) { .container { grid-template-columns: 1fr; } }
+.card { background: var(--surface); border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow); margin-bottom: 16px; border: 1px solid var(--border); }
+.card h2 { font-size: 15px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; font-weight: 600; }
+.card h3 { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin: 12px 0 8px; }
+.form-group { margin-bottom: 12px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+label { display: block; font-size: 12px; font-weight: 500; color: var(--text-muted); margin-bottom: 4px; }
+input, select, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--text); font-size: 13px; font-family: inherit; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 2px rgba(10,79,214,0.1); }
+input[type="number"] { font-variant-numeric: tabular-nums; }
+.btn { padding: 8px 14px; background: var(--primary); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; }
+.btn:hover { background: var(--primary-hover); }
+.btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+.btn-secondary:hover { background: var(--border); }
+.btn-danger { background: var(--danger); }
+.btn-sm { padding: 4px 8px; font-size: 11px; }
+.btn-block { width: 100%; justify-content: center; }
+.results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.result-tile { background: var(--surface); padding: 14px; border-radius: var(--radius); border: 1px solid var(--border); border-left: 3px solid var(--primary); }
+.result-tile .label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.result-tile .value { font-size: 18px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.result-tile.accent { border-left-color: var(--accent); }
+.result-tile.warning { border-left-color: var(--warning); }
+.result-tile.danger { border-left-color: var(--danger); }
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 16px; overflow-x: auto; }
+.tab { padding: 10px 16px; cursor: pointer; background: none; border: none; color: var(--text-muted); font-size: 13px; font-weight: 500; border-bottom: 2px solid transparent; white-space: nowrap; font-family: inherit; }
+.tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+.table-wrapper { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); max-height: 500px; overflow-y: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th, td { padding: 8px 12px; text-align: right; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { background: var(--surface-2); font-weight: 600; position: sticky; top: 0; z-index: 1; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; }
+tbody tr:hover { background: var(--surface-2); }
+tr.event-prepay { background: rgba(46,212,168,0.08); }
+tr.event-rate { background: rgba(255,184,77,0.08); }
+tr.event-extra { background: rgba(77,138,246,0.06); }
+tr.event-interest { background: rgba(231,76,60,0.06); }
+tr.event-partperiod { background: rgba(243,156,18,0.10); }
+.list-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: var(--surface-2); border-radius: 6px; margin-bottom: 6px; font-size: 12px; }
+.list-item .info { flex: 1; }
+.list-item .info strong { display: block; font-size: 13px; }
+.list-item .info small { color: var(--text-muted); }
+.accordion-item { border: 1px solid var(--border); border-radius: 6px; margin-bottom: 6px; overflow: hidden; }
+.accordion-header { padding: 10px 14px; background: var(--surface-2); cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 500; user-select: none; }
+.accordion-header:hover { background: var(--border); }
+.accordion-header::after { content: "▾"; transition: transform 0.2s; }
+.accordion-item.open .accordion-header::after { transform: rotate(180deg); }
+.accordion-body { display: none; padding: 0; }
+.accordion-item.open .accordion-body { display: block; }
+.nested .accordion-header { background: var(--surface); padding-left: 24px; font-size: 12px; }
+.chart-container { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; height: 320px; position: relative; }
+.charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 768px) { .charts-grid { grid-template-columns: 1fr; } }
+.toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 18px; background: var(--text); color: var(--bg); border-radius: 6px; z-index: 1000; box-shadow: var(--shadow-lg); max-width: 380px; }
+.toast.error { background: var(--danger); color: #fff; }
+.toast.success { background: var(--accent); color: #fff; }
+.help-text { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+.divider { height: 1px; background: var(--border); margin: 14px 0; }
+.search-input { margin-bottom: 8px; }
+.pagination { display: flex; gap: 4px; justify-content: center; margin-top: 10px; }
+.formula { background: var(--surface-2); padding: 10px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 12px; margin: 8px 0; border-left: 3px solid var(--primary); }
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+@media (max-width: 768px) { .compare-grid { grid-template-columns: 1fr; } }
+.scenario-box { background: var(--surface-2); padding: 14px; border-radius: 8px; border-top: 3px solid var(--primary); }
+.scenario-box.actual { border-top-color: var(--danger); }
+.scenario-box.prepay { border-top-color: var(--accent); }
+.scenario-box.combined { border-top-color: var(--warning); }
+.scenario-box h4 { font-size: 13px; font-weight: 700; margin-bottom: 10px; text-transform: uppercase; }
+.scenario-box .metric { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.scenario-box .metric:last-child { border: none; }
+.diff-positive { color: var(--accent); font-weight: 600; }
+.diff-negative { color: var(--danger); font-weight: 600; }
+.savings-banner { background: linear-gradient(135deg, var(--accent), #00d4a8); color: #fff; padding: 16px; border-radius: 8px; margin-bottom: 14px; text-align: center; }
+.savings-banner h3 { color: rgba(255,255,255,0.9); font-size: 12px; margin-bottom: 4px; }
+.savings-banner .big { font-size: 24px; font-weight: 700; }
+input[type="file"] { padding: 4px; font-size: 11px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>SPARK EMI Calculator</h1>
+  <div class="header-actions">
+    <button class="btn btn-secondary btn-sm" id="sampleHomeBtn">Sample Home Loan</button>
+    <button class="btn btn-secondary btn-sm" id="sampleFloatBtn">Sample Floating</button>
+    <button class="btn btn-secondary btn-sm" id="samplePrepayBtn">Sample Prepay</button>
+    <button class="btn btn-secondary btn-sm" id="sampleExtraBtn">Sample Extra EMI</button>
+    <button class="btn btn-secondary btn-sm" id="themeToggle">🌙</button>
+  </div>
+</header>
+
+<div class="container">
+  <div>
+    <div class="card">
+      <h2>Loan Parameters</h2>
+      <div class="form-group"><label>Principal Amount (₹)</label><input type="number" id="principal" value="9000000" min="1000" /></div>
+      <div class="form-row">
+        <div class="form-group"><label>Interest Rate (% p.a.)</label><input type="number" id="rate" value="7.65" step="0.01" min="0.1" /></div>
+        <div class="form-group"><label>EMI Date of Month</label><input type="number" id="emiDay" value="5" min="1" max="31" /></div>
+      </div>
+      <div class="form-group"><label>Loan Start Date</label><input type="date" id="startDate" /></div>
+      <div class="form-group">
+        <label>First EMI Date <span style="color:var(--text-muted);font-weight:400;">(auto-computed, override optional)</span></label>
+        <input type="date" id="firstEmiDate" />
+        <p class="help-text" id="firstEmiHint">Leave blank to auto-compute based on EMI day.</p>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Tenure Years</label><input type="number" id="tenureYears" value="30" min="0" max="40" /></div>
+        <div class="form-group"><label>Tenure Months</label><input type="number" id="tenureMonths" value="0" min="0" max="11" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Compounding Method</label>
+          <select id="compounding"><option value="monthly">Monthly Reducing</option><option value="daily">Daily Reducing</option></select>
+        </div>
+        <div class="form-group">
+          <label>Day Count</label>
+          <select id="dayCount"><option value="365">Actual/365</option><option value="actual">Actual/Actual</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Processing Fee (₹)</label><input type="number" id="processingFee" value="0" min="0" /></div>
+        <div class="form-group"><label>Insurance (₹)</label><input type="number" id="insurance" value="0" min="0" /></div>
+      </div>
+      <button class="btn btn-block" id="calcBtn">Calculate EMI</button>
+    </div>
+
+    <div class="card">
+      <h2>💡 Monthly Extra Payment</h2>
+      <p class="help-text" style="margin-bottom:12px;">Pay a slightly higher amount every month. Extra goes directly to principal.</p>
+      <div class="form-group">
+        <label>Total Monthly Payment You Want to Pay (₹)</label>
+        <input type="number" id="customEmi" placeholder="e.g. 64000" min="0" />
+        <p class="help-text" id="extraHint">Calculate first to see suggested round-ups.</p>
+      </div>
+      <div class="form-row">
+        <button class="btn btn-secondary btn-sm" id="roundUp1k">Round to ₹1,000</button>
+        <button class="btn btn-secondary btn-sm" id="roundUp5k">Round to ₹5,000</button>
+      </div>
+      <div style="height:6px"></div>
+      <button class="btn btn-secondary btn-sm btn-block" id="clearExtra">Clear Extra Payment</button>
+    </div>
+
+    <div class="card">
+      <h2>Prepayments <button class="btn btn-sm" id="addPrepayBtn">+ Add</button></h2>
+      <div id="prepayForm" style="display:none;">
+        <div class="form-row">
+          <div class="form-group"><label>Date</label><input type="date" id="prepayDate" /></div>
+          <div class="form-group"><label>Amount (₹)</label><input type="number" id="prepayAmount" /></div>
+        </div>
+        <div class="form-group"><label>Notes</label><input type="text" id="prepayNotes" placeholder="Optional" /></div>
+        <div class="form-group">
+          <label>Strategy</label>
+          <select id="prepayStrategy">
+            <option value="reduceTenure">Keep EMI, Reduce Tenure</option>
+            <option value="reduceEMI">Keep Tenure, Reduce EMI</option>
+          </select>
+        </div>
+        <button class="btn btn-block btn-sm" id="savePrepayBtn">Save Prepayment</button>
+      </div>
+      <div id="prepayList"></div>
+      <div class="divider"></div>
+      <label>Import Prepayments CSV (Date,Amount,Notes)</label>
+      <input type="file" id="prepayCsvImport" accept=".csv" />
+    </div>
+
+    <div class="card">
+      <h2>Rate Changes <button class="btn btn-sm" id="addRateBtn">+ Add</button></h2>
+      <div id="rateForm" style="display:none;">
+        <div class="form-row">
+          <div class="form-group"><label>Effective Date</label><input type="date" id="rateDate" /></div>
+          <div class="form-group"><label>New Rate (%)</label><input type="number" id="rateValue" step="0.01" /></div>
+        </div>
+        <button class="btn btn-block btn-sm" id="saveRateBtn">Save Rate Change</button>
+      </div>
+      <div id="rateList"></div>
+      <div class="divider"></div>
+      <label>Import Rate Changes CSV (Date,Rate)</label>
+      <input type="file" id="rateCsvImport" accept=".csv" />
+    </div>
+
+    <div class="card">
+      <h2>Import / Export</h2>
+      <h3>Export</h3>
+      <button class="btn btn-secondary btn-block btn-sm" id="exportSchedule">Export Amortization CSV</button>
+      <div style="height:6px"></div>
+      <button class="btn btn-secondary btn-block btn-sm" id="exportYearly">Export Yearly Summary</button>
+      <div style="height:6px"></div>
+      <button class="btn btn-secondary btn-block btn-sm" id="exportConfig">Export Loan Config (CSV)</button>
+      <div style="height:6px"></div>
+      <button class="btn btn-secondary btn-block btn-sm" id="exportJSON">Export Backup (JSON)</button>
+      <div class="divider"></div>
+      <h3>Import Loan Config</h3>
+      <label>Upload Config CSV</label>
+      <input type="file" id="configCsvImport" accept=".csv" />
+      <div style="height:8px"></div>
+      <label>Or upload JSON Backup</label>
+      <input type="file" id="configJsonImport" accept=".json" />
+    </div>
+  </div>
+
+  <div>
+    <div class="results-grid" id="resultsGrid">
+      <div class="result-tile"><div class="label">Base EMI</div><div class="value" id="rEmi">₹0</div></div>
+      <div class="result-tile accent"><div class="label">Total Interest</div><div class="value" id="rInterest">₹0</div></div>
+      <div class="result-tile"><div class="label">Total Payment</div><div class="value" id="rTotal">₹0</div></div>
+      <div class="result-tile warning"><div class="label">Loan End Date</div><div class="value" id="rEnd" style="font-size:14px;">-</div></div>
+      <div class="result-tile accent"><div class="label">Effective Cost</div><div class="value" id="rEffective">0%</div></div>
+      <div class="result-tile danger"><div class="label">Interest Saved</div><div class="value" id="rSaved">₹0</div></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="charts">Charts</button>
+      <button class="tab" data-tab="schedule">Amortization</button>
+      <button class="tab" data-tab="breakdown">Breakdown</button>
+      <button class="tab" data-tab="compare">Compare Scenarios</button>
+      <button class="tab" data-tab="formulas">Formulas</button>
+    </div>
+
+    <div class="tab-content active" id="tab-charts">
+      <div class="charts-grid">
+        <div class="chart-container"><canvas id="chartBalance"></canvas></div>
+        <div class="chart-container"><canvas id="chartPI"></canvas></div>
+        <div class="chart-container"><canvas id="chartComposition"></canvas></div>
+        <div class="chart-container"><canvas id="chartRate"></canvas></div>
+        <div class="chart-container"><canvas id="chartSavings"></canvas></div>
+        <div class="chart-container"><canvas id="chartProjection"></canvas></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-schedule">
+      <div class="card">
+        <input type="text" class="search-input" id="scheduleSearch" placeholder="Search by date or event..." />
+        <div class="table-wrapper">
+          <table id="scheduleTable">
+            <thead><tr><th>Date</th><th>Event</th><th>EMI</th><th>Principal</th><th>Interest</th><th>Extra/Prepay</th><th>Rate</th><th>Outstanding</th></tr></thead>
+            <tbody id="scheduleBody"></tbody>
+          </table>
+        </div>
+        <div class="pagination" id="schedulePagination"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-breakdown">
+      <div class="card"><h2>Yearly → Monthly Breakdown</h2><div id="breakdownContainer"></div></div>
+    </div>
+
+    <div class="tab-content" id="tab-compare">
+      <div class="card">
+        <div id="savingsBanner"></div>
+        <h2>Three-Way Scenario Comparison</h2>
+        <div class="compare-grid" id="compareGrid"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-formulas">
+      <div class="card">
+        <h2>Calculation Methodology</h2>
+        <h3>Daily Reducing with Month-End Posting</h3>
+        <p>Interest is accrued daily on outstanding principal. At month-end, total accrued interest is posted as a debit (added to outstanding). EMIs and prepayments reduce principal immediately.</p>
+        <div class="formula">Daily Interest = Outstanding × Annual Rate ÷ 365</div>
+        <h3>Part Period Interest</h3>
+        <p>For days between loan start date and the first month-end, interest is charged separately as "Part Period Interest" (matches actual bank behavior).</p>
+        <h3>EMI Formula</h3>
+        <div class="formula">EMI = P × r × (1+r)^n / ((1+r)^n - 1)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const INR = new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
+const fmt = (n) => isFinite(n) ? INR.format(Math.round(n)) : "₹0";
+const fmtDate = (d) => {
+  if (!d) return "-";
+  const date = new Date(d);
+  if (isNaN(date)) return "-";
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+};
+const ymd = (d) => {
+  const x = new Date(d);
+  return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;
+};
+const daysBetween = (a, b) => Math.round((new Date(b) - new Date(a)) / 86400000);
+const addMonths = (d, m) => {
+  const x = new Date(d); const day = x.getDate();
+  x.setDate(1); x.setMonth(x.getMonth()+m);
+  const lastDay = new Date(x.getFullYear(), x.getMonth()+1, 0).getDate();
+  x.setDate(Math.min(day, lastDay));
+  return x;
+};
+const isLeap = (y) => (y%4===0 && y%100!==0) || y%400===0;
+const daysInYear = (y) => isLeap(y) ? 366 : 365;
+
+function toast(msg, type="info") {
+  const el = document.createElement("div");
+  el.className = "toast " + type;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(()=> el.remove(), 3500);
+}
+
+function computeFirstEmiDate(startDate, emiDay) {
+  const start = new Date(startDate);
+  const startDay = start.getDate();
+  let candidate;
+  if (startDay < emiDay) {
+    candidate = new Date(start.getFullYear(), start.getMonth(), 1);
+  } else {
+    candidate = addMonths(start, 1);
+  }
+  const lastDay = new Date(candidate.getFullYear(), candidate.getMonth()+1, 0).getDate();
+  candidate.setDate(Math.min(emiDay, lastDay));
+  return candidate;
+}
+
+let state = {
+  loan: null, baseline: null, extraOnly: null,
+  prepayments: [], rateChanges: [], schedule: [],
+  schedulePage: 1, pageSize: 50, searchQuery: "", customEmi: 0
+};
+
+function saveState() {
+  const s = {
+    inputs: collectInputs(),
+    prepayments: state.prepayments,
+    rateChanges: state.rateChanges,
+    customEmi: state.customEmi,
+    theme: document.documentElement.getAttribute("data-theme") || "light"
+  };
+  try { localStorage.setItem("sparkEMI", JSON.stringify(s)); } catch(e) {}
+}
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem("sparkEMI") || "{}");
+    if (s.inputs) applyInputs(s.inputs);
+    if (s.prepayments) state.prepayments = s.prepayments;
+    if (s.rateChanges) state.rateChanges = s.rateChanges;
+    if (s.customEmi) {
+      state.customEmi = s.customEmi;
+      document.getElementById("customEmi").value = s.customEmi;
+    }
+    if (s.theme) document.documentElement.setAttribute("data-theme", s.theme);
+  } catch(e) {}
+}
+
+function collectInputs() {
+  return {
+    principal: +document.getElementById("principal").value,
+    rate: +document.getElementById("rate").value,
+    emiDay: +document.getElementById("emiDay").value,
+    startDate: document.getElementById("startDate").value,
+    firstEmiDate: document.getElementById("firstEmiDate").value,
+    tenureYears: +document.getElementById("tenureYears").value,
+    tenureMonths: +document.getElementById("tenureMonths").value,
+    compounding: document.getElementById("compounding").value,
+    dayCount: document.getElementById("dayCount").value,
+    processingFee: +document.getElementById("processingFee").value,
+    insurance: +document.getElementById("insurance").value
+  };
+}
+function applyInputs(i) {
+  for (let k in i) { const el = document.getElementById(k); if (el) el.value = i[k]; }
+}
+
+function updateFirstEmiHint() {
+  const startDate = document.getElementById("startDate").value;
+  const emiDay = +document.getElementById("emiDay").value;
+  const overrideField = document.getElementById("firstEmiDate");
+  const hintEl = document.getElementById("firstEmiHint");
+  if (!startDate || !emiDay) return;
+  const autoDate = computeFirstEmiDate(new Date(startDate), emiDay);
+  const autoDateStr = ymd(autoDate);
+  overrideField.min = autoDateStr;
+  if (overrideField.value && overrideField.value < autoDateStr) overrideField.value = "";
+  if (overrideField.value) {
+    const days = daysBetween(new Date(startDate), new Date(overrideField.value));
+    hintEl.textContent = `📅 Custom first EMI: ${fmtDate(overrideField.value)} (${days} days from start). Auto would be ${fmtDate(autoDate)}.`;
+    hintEl.style.color = "var(--primary)";
+  } else {
+    const days = daysBetween(new Date(startDate), autoDate);
+    hintEl.textContent = `✓ Auto first EMI: ${fmtDate(autoDate)} (${days} days from start). You can override above.`;
+    hintEl.style.color = "var(--accent)";
+  }
+}
+
+function calcEMI(principal, annualRate, months) {
+  if (months <= 0) return 0;
+  const r = annualRate / 12 / 100;
+  if (r === 0) return principal / months;
+  return principal * r * Math.pow(1+r, months) / (Math.pow(1+r, months) - 1);
+}
+
+function validate(i) {
+  const errs = [];
+  if (i.principal <= 0) errs.push("Principal must be positive");
+  if (i.rate <= 0 || i.rate > 50) errs.push("Rate must be 0-50%");
+  if (!i.startDate) errs.push("Start date required");
+  if (i.tenureYears * 12 + i.tenureMonths <= 0) errs.push("Tenure must be positive");
+  if (i.emiDay < 1 || i.emiDay > 31) errs.push("EMI day must be 1-31");
+  const dates = state.rateChanges.map(r=>r.date);
+  if (new Set(dates).size !== dates.length) errs.push("Duplicate rate change dates");
+  for (const p of state.prepayments) {
+    if (p.amount <= 0) errs.push("Prepayment amount must be positive");
+    if (new Date(p.date) < new Date(i.startDate)) errs.push("Prepayment before loan start");
+  }
+  return errs;
+}
+
+/* ---------- AMORTIZATION: BANK-MATCHING DAILY REDUCING ---------- */
+function buildSchedule(opts = {}) {
+  const inputs = collectInputs();
+  const includePrepay = opts.includePrepay !== false;
+  const includeRate = opts.includeRate !== false;
+  const extraMonthly = opts.extraMonthly || 0;
+
+  const totalMonths = inputs.tenureYears * 12 + inputs.tenureMonths;
+  let outstanding = inputs.principal;
+  let currentRate = inputs.rate;
+  let emi = calcEMI(outstanding, currentRate, totalMonths);
+  const startDate = new Date(inputs.startDate);
+  let firstEmi = inputs.firstEmiDate ? new Date(inputs.firstEmiDate) : computeFirstEmiDate(startDate, inputs.emiDay);
+
+  const emiDates = [];
+  for (let m = 0; m < totalMonths * 2 && m < 600; m++) {
+    const d = addMonths(firstEmi, m);
+    d.setDate(Math.min(inputs.emiDay, new Date(d.getFullYear(), d.getMonth()+1, 0).getDate()));
+    emiDates.push(ymd(d));
+  }
+
+  const prepays = includePrepay ? [...state.prepayments].sort((a,b)=> new Date(a.date)-new Date(b.date)) : [];
+  const rates = includeRate ? [...state.rateChanges].sort((a,b)=> new Date(a.date)-new Date(b.date)) : [];
+  const events = [];
+  emiDates.forEach((d, idx) => events.push({ date: d, type: "EMI", idx }));
+  prepays.forEach(p => events.push({ date: p.date, type: "PREPAY", amount: p.amount, notes: p.notes, strategy: p.strategy }));
+  rates.forEach(r => events.push({ date: r.date, type: "RATE", rate: r.rate }));
+
+  // Generate month-end events
+  let cursor = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+  for (let m = 0; m < totalMonths + 24; m++) {
+    const monthEnd = new Date(cursor.getFullYear(), cursor.getMonth()+1, 0);
+    if (monthEnd >= startDate) events.push({ date: ymd(monthEnd), type: "MONTHEND" });
+    cursor = addMonths(cursor, 1);
+  }
+
+  // Sort: same-day order PREPAY/RATE/EMI BEFORE MONTHEND, since prepay on day X affects that day's interest
+  events.sort((a,b)=> {
+    const dc = a.date.localeCompare(b.date);
+    if (dc !== 0) return dc;
+    const order = { "RATE": 1, "PREPAY": 2, "EMI": 3, "MONTHEND": 4 };
+    return (order[a.type] || 99) - (order[b.type] || 99);
+  });
+
+  const schedule = [];
+  let lastDate = ymd(startDate);
+  let accruedInterest = 0;
+  let totalInterest = 0;
+  let totalPrepay = 0;
+  let totalExtra = 0;
+
+  // PART PERIOD INTEREST: from start date (inclusive) to first month-end (inclusive)
+  const firstMonthEnd = new Date(startDate.getFullYear(), startDate.getMonth()+1, 0);
+  if (ymd(startDate) <= ymd(firstMonthEnd)) {
+    const days = daysBetween(startDate, firstMonthEnd) + 1;
+    let denom = 365;
+    if (inputs.dayCount === "actual") denom = daysInYear(startDate.getFullYear());
+    const partInt = Math.round(outstanding * inputs.rate / 100 / denom * days);
+    if (partInt > 0.01) {
+      outstanding += partInt;
+      schedule.push({
+        date: ymd(firstMonthEnd), event: "Part Period Interest",
+        emi: 0, principal: 0, interest: partInt,
+        prepay: 0, extra: 0, rate: inputs.rate, outstanding
+      });
+      totalInterest += partInt;
+      lastDate = ymd(firstMonthEnd);
+    }
+  }
+
+    /**
+   * BANK-MATCHING accrual logic:
+   * - When event happens on day X (prepay/EMI), the new balance applies FROM day X itself
+   * - So we accrue interest from lastDate+1 UP TO (but not including) event date on OLD balance
+   * - Day X's interest will be accrued in the NEXT segment on NEW balance
+   * 
+   * Example: lastDate = "2025-07-11", prepayment on "2025-07-18"
+   *   - Accrue 2025-07-12, 13, 14, 15, 16, 17 (6 days) on old balance
+   *   - Apply prepayment, lastDate = "2025-07-17"
+   *   - Next event accrual starts from 2025-07-18 on new balance
+   */
+  function accrueDaily(fromDate, toDate, useNewBalanceOnToDate = false) {
+    const d1 = new Date(fromDate), d2 = new Date(toDate);
+    let days = daysBetween(d1, d2);
+    // Exclude fromDate (interest already paid for that day before)
+    // Include up to but not including toDate if useNewBalanceOnToDate=true
+    if (days <= 0) return 0;
+    let sum = 0;
+    let curr = new Date(d1);
+    curr.setDate(curr.getDate() + 1); // Start from day after fromDate
+    
+    const totalDays = useNewBalanceOnToDate ? days - 1 : days;
+    
+    for (let k = 0; k < totalDays; k++) {
+      let denom = 365;
+      if (inputs.dayCount === "actual") denom = daysInYear(curr.getFullYear());
+      sum += outstanding * currentRate / 100 / denom;
+      curr.setDate(curr.getDate()+1);
+    }
+    return sum;
+  }
+
+  for (const ev of events) {
+    if (outstanding <= 0.01 && ev.type !== "MONTHEND") break;
+    if (ev.date < lastDate) continue;
+    if (ev.type === "MONTHEND" && ev.date <= lastDate) continue;
+
+    if (ev.type === "RATE") {
+      // Accrue up to (but not including) rate change date on OLD rate
+      accruedInterest += accrueDaily(lastDate, ev.date, true);
+      currentRate = ev.rate;
+      schedule.push({
+        date: ev.date, event: "Rate Change",
+        emi: 0, principal: 0, interest: 0,
+        prepay: 0, extra: 0, rate: currentRate, outstanding
+      });
+      // Set lastDate to one day BEFORE rate change date so next accrual starts from rate change date with NEW rate
+      const prevDay = new Date(ev.date); prevDay.setDate(prevDay.getDate() - 1);
+      lastDate = ymd(prevDay);
+    }
+    else if (ev.type === "PREPAY") {
+      // Accrue interest UP TO (excluding) prepayment date on OLD balance
+      accruedInterest += accrueDaily(lastDate, ev.date, true);
+      const amt = Math.min(ev.amount, outstanding);
+      outstanding -= amt;
+      totalPrepay += amt;
+      schedule.push({
+        date: ev.date,
+        event: "Prepayment" + (ev.notes ? ` (${ev.notes})` : ""),
+        emi: 0, principal: amt, interest: 0,
+        prepay: amt, extra: 0, rate: currentRate, outstanding
+      });
+      // lastDate = day before prepayment, so prepayment date itself accrues on NEW balance
+      const prevDay = new Date(ev.date); prevDay.setDate(prevDay.getDate() - 1);
+      lastDate = ymd(prevDay);
+    }
+    else if (ev.type === "EMI") {
+      if (outstanding <= 0.01) { lastDate = ev.date; continue; }
+      // Accrue interest UP TO (excluding) EMI date on OLD balance
+      accruedInterest += accrueDaily(lastDate, ev.date, true);
+      let payment = state.customEmi || emi;
+      let principalPaid = Math.min(payment, outstanding);
+      outstanding -= principalPaid;
+      let extraApplied = 0;
+      if (extraMonthly > 0 && outstanding > 0.01) {
+        extraApplied = Math.min(extraMonthly, outstanding);
+        outstanding -= extraApplied;
+        totalExtra += extraApplied;
+      }
+      schedule.push({
+        date: ev.date,
+        event: extraApplied > 0 ? "EMI + Extra" : "EMI",
+        emi: principalPaid, principal: principalPaid, interest: 0,
+        prepay: 0, extra: extraApplied,
+        rate: currentRate, outstanding
+      });
+      const prevDay = new Date(ev.date); prevDay.setDate(prevDay.getDate() - 1);
+      lastDate = ymd(prevDay);
+    }
+    else if (ev.type === "MONTHEND") {
+      // Accrue any remaining interest UP TO AND INCLUDING month-end
+      accruedInterest += accrueDaily(lastDate, ev.date, false);
+      if (Math.abs(accruedInterest) > 0.01) {
+        // Round to nearest rupee (banks post in whole rupees)
+        const intToPost = Math.round(accruedInterest);
+        outstanding += intToPost;
+        totalInterest += intToPost;
+        schedule.push({
+          date: ev.date, event: "Interest Debit (Month-end)",
+          emi: 0, principal: 0, interest: intToPost,
+          prepay: 0, extra: 0, rate: currentRate, outstanding
+        });
+        accruedInterest = 0;
+      }
+      lastDate = ev.date;
+    }
+  }
+
+  return {
+    schedule, emi, totalInterest, totalPrepay, totalExtra,
+    finalOutstanding: outstanding,
+    endDate: schedule.length ? schedule[schedule.length-1].date : null,
+    inputs, extraMonthly
+  };
+}
+
+function calculate() {
+  const inputs = collectInputs();
+  const errs = validate(inputs);
+  if (errs.length) { toast(errs[0], "error"); return; }
+
+  const customEmi = +document.getElementById("customEmi").value || 0;
+  state.customEmi = customEmi;
+
+  const totalMonths = inputs.tenureYears * 12 + inputs.tenureMonths;
+  const baseEmi = calcEMI(inputs.principal, inputs.rate, totalMonths);
+  const extraMonthly = customEmi > 0 ? Math.max(0, customEmi - baseEmi) : 0;
+
+  // For baseline, temporarily disable customEmi
+  const savedCustom = state.customEmi;
+  state.customEmi = 0;
+  const baseline = buildSchedule({ includePrepay: false, includeRate: false, extraMonthly: 0 });
+  state.customEmi = savedCustom;
+  
+  const extraOnly = extraMonthly > 0 ? buildSchedule({ includePrepay: false, includeRate: false, extraMonthly }) : null;
+  const fullScenario = buildSchedule({ includePrepay: true, includeRate: true, extraMonthly });
+
+  state.baseline = baseline;
+  state.extraOnly = extraOnly;
+  state.loan = fullScenario;
+  state.schedule = fullScenario.schedule;
+
+  const hintEl = document.getElementById("extraHint");
+  if (customEmi > 0 && extraMonthly > 0) {
+    hintEl.textContent = `✓ Extra ${fmt(extraMonthly)}/month → goes to principal. Base EMI: ${fmt(baseEmi)}.`;
+    hintEl.style.color = "var(--accent)";
+  } else if (customEmi > 0 && customEmi < baseEmi) {
+    hintEl.textContent = `⚠️ ${fmt(customEmi)} is less than base EMI ${fmt(baseEmi)}. Ignored.`;
+    hintEl.style.color = "var(--danger)";
+  } else {
+    hintEl.textContent = `Base EMI: ${fmt(baseEmi)}. Try ${fmt(Math.ceil(baseEmi/1000)*1000)} or ${fmt(Math.ceil(baseEmi/5000)*5000)}.`;
+    hintEl.style.color = "var(--text-muted)";
+  }
+
+  document.getElementById("rEmi").textContent = fmt(baseEmi);
+  document.getElementById("rInterest").textContent = fmt(fullScenario.totalInterest);
+  document.getElementById("rTotal").textContent = fmt(fullScenario.totalInterest + inputs.principal + inputs.processingFee + inputs.insurance);
+  document.getElementById("rEnd").textContent = fmtDate(fullScenario.endDate);
+  document.getElementById("rEffective").textContent = ((fullScenario.totalInterest / inputs.principal) * 100).toFixed(2) + "%";
+  document.getElementById("rSaved").textContent = fmt(baseline.totalInterest - fullScenario.totalInterest);
+
+  renderSchedule();
+  renderBreakdown();
+  renderCharts();
+  renderCompare();
+  saveState();
+}
+
+function renderPrepays() {
+  const el = document.getElementById("prepayList");
+  el.innerHTML = state.prepayments.sort((a,b)=> a.date.localeCompare(b.date)).map((p, idx) => `
+    <div class="list-item">
+      <div class="info">
+        <strong>${fmt(p.amount)}</strong>
+        <small>${fmtDate(p.date)} · ${p.strategy === "reduceEMI" ? "Reduce EMI" : "Reduce Tenure"}${p.notes ? " · " + p.notes : ""}</small>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="removePrepay(${idx})">×</button>
+    </div>`).join("") || `<p class="help-text">No prepayments added.</p>`;
+}
+function removePrepay(idx) {
+  state.prepayments.sort((a,b)=> a.date.localeCompare(b.date));
+  state.prepayments.splice(idx, 1);
+  renderPrepays(); saveState();
+}
+
+function renderRates() {
+  const el = document.getElementById("rateList");
+  el.innerHTML = state.rateChanges.sort((a,b)=> a.date.localeCompare(b.date)).map((r, idx) => `
+    <div class="list-item">
+      <div class="info"><strong>${r.rate}%</strong><small>${fmtDate(r.date)}</small></div>
+      <button class="btn btn-danger btn-sm" onclick="removeRate(${idx})">×</button>
+    </div>`).join("") || `<p class="help-text">No rate changes added.</p>`;
+}
+function removeRate(idx) {
+  state.rateChanges.sort((a,b)=> a.date.localeCompare(b.date));
+  state.rateChanges.splice(idx, 1);
+  renderRates(); saveState();
+}
+
+function renderSchedule() {
+  if (!state.schedule.length) return;
+  const q = state.searchQuery.toLowerCase();
+  const filtered = q ? state.schedule.filter(r => r.date.includes(q) || r.event.toLowerCase().includes(q)) : state.schedule;
+  const totalPages = Math.max(1, Math.ceil(filtered.length / state.pageSize));
+  if (state.schedulePage > totalPages) state.schedulePage = totalPages;
+  const slice = filtered.slice((state.schedulePage-1)*state.pageSize, state.schedulePage*state.pageSize);
+  
+  document.getElementById("scheduleBody").innerHTML = slice.map(r => {
+    let cls = "";
+    if (r.event.includes("Prepay")) cls = "event-prepay";
+    else if (r.event.includes("Rate")) cls = "event-rate";
+    else if (r.event.includes("Extra")) cls = "event-extra";
+    else if (r.event.includes("Interest Debit")) cls = "event-interest";
+    else if (r.event.includes("Part Period")) cls = "event-partperiod";
+    const extraOrPrepay = r.prepay ? fmt(r.prepay) : (r.extra ? `+${fmt(r.extra)}` : "-");
+    return `<tr class="${cls}">
+      <td>${fmtDate(r.date)}</td><td>${r.event}</td>
+      <td>${r.emi ? fmt(r.emi) : "-"}</td>
+      <td>${r.principal ? fmt(r.principal) : "-"}</td>
+      <td>${r.interest ? fmt(r.interest) : "-"}</td>
+      <td>${extraOrPrepay}</td>
+      <td>${r.rate.toFixed(2)}%</td>
+      <td>${fmt(r.outstanding)}</td>
+    </tr>`;
+  }).join("");
+
+  document.getElementById("schedulePagination").innerHTML = 
+    `<button class="btn btn-sm btn-secondary" ${state.schedulePage===1?"disabled":""} onclick="schedPage(${state.schedulePage-1})">‹ Prev</button>
+     <span style="padding:4px 10px;font-size:12px;">Page ${state.schedulePage} / ${totalPages}</span>
+     <button class="btn btn-sm btn-secondary" ${state.schedulePage===totalPages?"disabled":""} onclick="schedPage(${state.schedulePage+1})">Next ›</button>`;
+}
+function schedPage(p) { state.schedulePage = p; renderSchedule(); }
+
+function renderBreakdown() {
+  if (!state.schedule.length) return;
+  const byYear = {};
+  for (const r of state.schedule) {
+    const d = new Date(r.date);
+    const y = d.getFullYear();
+    const monthKey = `${y}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if (!byYear[y]) byYear[y] = { rows: [], months: {} };
+    byYear[y].rows.push(r);
+    if (!byYear[y].months[monthKey]) byYear[y].months[monthKey] = { rows: [] };
+    byYear[y].months[monthKey].rows.push(r);
+  }
+  const sum = (arr, key) => arr.reduce((a,b)=>a+(b[key]||0), 0);
+  let html = "";
+  for (const y in byYear) {
+    const yd = byYear[y];
+    const closing = yd.rows[yd.rows.length-1].outstanding;
+    html += `<div class="accordion-item">
+      <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
+        <span><strong>${y}</strong> · Int: ${fmt(sum(yd.rows,"interest"))} · Pri: ${fmt(sum(yd.rows,"principal"))} · Extra: ${fmt(sum(yd.rows,"extra"))} · Prepay: ${fmt(sum(yd.rows,"prepay"))} · Bal: ${fmt(closing)}</span>
+      </div>
+      <div class="accordion-body nested">`;
+    for (const mk in yd.months) {
+      const md = yd.months[mk];
+      const mClose = md.rows[md.rows.length-1].outstanding;
+      const mName = new Date(mk + "-01").toLocaleDateString("en-IN", { month: "short", year:"numeric" });
+      html += `<div class="accordion-item">
+        <div class="accordion-header" onclick="event.stopPropagation();this.parentElement.classList.toggle('open')">
+          <span>${mName} · Int ${fmt(sum(md.rows,"interest"))} · Pri ${fmt(sum(md.rows,"principal"))} · Bal ${fmt(mClose)}</span>
+        </div>
+        <div class="accordion-body">
+          <div class="table-wrapper" style="max-height:300px;">
+            <table>
+              <thead><tr><th>Date</th><th>Event</th><th>Interest</th><th>Principal</th><th>Extra</th><th>Prepay</th><th>Balance</th></tr></thead>
+              <tbody>${md.rows.map(r => `<tr><td>${fmtDate(r.date)}</td><td>${r.event}</td><td>${fmt(r.interest)}</td><td>${fmt(r.principal)}</td><td>${fmt(r.extra)}</td><td>${fmt(r.prepay)}</td><td>${fmt(r.outstanding)}</td></tr>`).join("")}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>`;
+    }
+    html += `</div></div>`;
+  }
+  document.getElementById("breakdownContainer").innerHTML = html;
+}
+
+let charts = {};
+function destroyCharts() { for (let k in charts) { charts[k]?.destroy(); } charts = {}; }
+function renderCharts() {
+  if (!state.schedule.length || typeof Chart === 'undefined') return;
+  destroyCharts();
+  const monthly = {};
+  for (const r of state.schedule) {
+    const k = r.date.slice(0,7);
+    if (!monthly[k]) monthly[k] = { date: k, interest: 0, principal: 0, prepay: 0, extra: 0, outstanding: r.outstanding, rate: r.rate };
+    monthly[k].interest += r.interest || 0;
+    monthly[k].principal += r.principal || 0;
+    monthly[k].prepay += r.prepay || 0;
+    monthly[k].extra += r.extra || 0;
+    monthly[k].outstanding = r.outstanding;
+    monthly[k].rate = r.rate;
+  }
+  const months = Object.values(monthly);
+  const labels = months.map(m => m.date);
+  let cumI = 0, cumP = 0; const cumInt = [], cumPri = [];
+  for (const m of months) { cumI += m.interest; cumP += m.principal + m.prepay + m.extra; cumInt.push(cumI); cumPri.push(cumP); }
+  Chart.defaults.color = getComputedStyle(document.documentElement).getPropertyValue("--text");
+
+  charts.balance = new Chart(document.getElementById("chartBalance"), {
+    type: "line",
+    data: { labels, datasets: [{ label: "Outstanding", data: months.map(m=>m.outstanding), borderColor: "#0a4fd6", backgroundColor: "rgba(10,79,214,0.15)", fill: true, pointRadius: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins:{title:{display:true,text:"Outstanding Balance"}} }
+  });
+  charts.pi = new Chart(document.getElementById("chartPI"), {
+    type: "line",
+    data: { labels, datasets: [
+      { label: "Cumulative Principal", data: cumPri, borderColor: "#00b894", backgroundColor: "rgba(0,184,148,0.4)", fill: true, stack:"a", pointRadius: 0 },
+      { label: "Cumulative Interest", data: cumInt, borderColor: "#e74c3c", backgroundColor: "rgba(231,76,60,0.4)", fill: true, stack:"a", pointRadius: 0 }
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, plugins:{title:{display:true,text:"Principal vs Interest"}}, scales:{y:{stacked:true}} }
+  });
+  charts.comp = new Chart(document.getElementById("chartComposition"), {
+    type: "bar",
+    data: { labels, datasets:[
+      { label: "Principal", data: months.map(m=>m.principal), backgroundColor: "#00b894" },
+      { label: "Interest", data: months.map(m=>m.interest), backgroundColor: "#e74c3c" },
+      { label: "Extra", data: months.map(m=>m.extra), backgroundColor: "#4d8af6" }
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, plugins:{title:{display:true,text:"Monthly Composition"}}, scales:{x:{stacked:true},y:{stacked:true}} }
+  });
+  charts.rate = new Chart(document.getElementById("chartRate"), {
+    type: "line",
+    data: { labels, datasets:[{ label:"Rate (%)", data: months.map(m=>m.rate), borderColor:"#f39c12", fill:true, stepped:true, pointRadius:0 }]},
+    options: { responsive: true, maintainAspectRatio: false, plugins:{title:{display:true,text:"Rate Timeline"}} }
+  });
+  if (state.baseline) {
+    const baseMonthly = {};
+    for (const r of state.baseline.schedule) {
+      const k = r.date.slice(0,7);
+      if (!baseMonthly[k]) baseMonthly[k] = 0;
+      baseMonthly[k] += r.interest || 0;
+    }
+    let bCum=0, aCum=0; const savCum=[];
+    for (const m of months) { bCum += baseMonthly[m.date] || 0; aCum += m.interest; savCum.push(bCum - aCum); }
+    charts.sav = new Chart(document.getElementById("chartSavings"), {
+      type:"line",
+      data:{ labels, datasets:[{ label:"Interest Saved", data: savCum, borderColor:"#2ed4a8", fill:true, pointRadius:0 }]},
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{title:{display:true,text:"Interest Saved vs Baseline"}} }
+    });
+    const baseByMonth = {};
+    for (const r of state.baseline.schedule) baseByMonth[r.date.slice(0,7)] = r.outstanding;
+    charts.proj = new Chart(document.getElementById("chartProjection"), {
+      type:"line",
+      data:{ labels, datasets:[
+        { label:"Current", data: months.map(m=>m.outstanding), borderColor:"#0a4fd6", fill:false, pointRadius:0 },
+        { label:"Baseline", data: months.map(m=>baseByMonth[m.date] ?? null), borderColor:"#e74c3c", borderDash:[5,5], fill:false, pointRadius:0 }
+      ]},
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{title:{display:true,text:"Loan Projection"}} }
+    });
+  }
+}
+
+function renderCompare() {
+  if (!state.loan || !state.baseline) return;
+  const inputs = collectInputs();
+  const a = state.baseline, b = state.extraOnly, c = state.loan;
+  const totalSavings = a.totalInterest - c.totalInterest;
+  const banner = document.getElementById("savingsBanner");
+  if (totalSavings > 0) {
+    banner.innerHTML = `<div class="savings-banner"><h3>🎉 You Save</h3><div class="big">${fmt(totalSavings)} in interest</div></div>`;
+  } else { banner.innerHTML = ""; }
+  function box(title, scenario, cls) {
+    if (!scenario) return `<div class="scenario-box"><h4>${title}</h4><p class="help-text">Not configured.</p></div>`;
+    const months = scenario.schedule.filter(r=>r.event.includes("EMI")).length;
+    const intDiff = a.totalInterest - scenario.totalInterest;
+    return `<div class="scenario-box ${cls}">
+      <h4>${title}</h4>
+      <div class="metric"><span>Base EMI</span><strong>${fmt(scenario.emi)}</strong></div>
+      ${scenario.extraMonthly ? `<div class="metric"><span>Extra/Month</span><strong>${fmt(scenario.extraMonthly)}</strong></div>` : ''}
+      <div class="metric"><span>Total Interest</span><strong>${fmt(scenario.totalInterest)}</strong></div>
+      <div class="metric"><span>Total Payment</span><strong>${fmt(scenario.totalInterest + inputs.principal)}</strong></div>
+      <div class="metric"><span>Loan End</span><strong>${fmtDate(scenario.endDate)}</strong></div>
+      <div class="metric"><span>Tenure</span><strong>${(months/12).toFixed(1)} yrs</strong></div>
+      ${scenario.totalPrepay ? `<div class="metric"><span>Total Prepay</span><strong>${fmt(scenario.totalPrepay)}</strong></div>` : ''}
+      ${scenario.totalExtra ? `<div class="metric"><span>Total Extra</span><strong>${fmt(scenario.totalExtra)}</strong></div>` : ''}
+      ${cls !== 'actual' && intDiff > 0 ? `<div class="metric"><span>Interest Saved</span><strong class="diff-positive">${fmt(intDiff)}</strong></div>` : ''}
+    </div>`;
+  }
+  document.getElementById("compareGrid").innerHTML = 
+    box("Baseline (No Prepay)", a, "actual") + box("With Extra Monthly", b, "prepay") + box("Current Scenario", c, "combined");
+}
+
+function downloadCSV(filename, rows) {
+  const csv = rows.map(r => r.map(c => {
+    const s = String(c ?? "");
+    return s.includes(",") || s.includes('"') ? `"${s.replace(/"/g,'""')}"` : s;
+  }).join(",")).join("\n");
+  const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8;" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename; a.click();
+}
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/);
+  return lines.map(l => {
+    if (!l.trim()) return [];
+    const out = []; let cur = ""; let q = false;
+    for (let i=0;i<l.length;i++) {
+      const c = l[i];
+      if (c === '"') q = !q;
+      else if (c === "," && !q) { out.push(cur); cur = ""; }
+      else cur += c;
+    }
+    out.push(cur);
+    return out.map(s => s.trim());
+  });
+}
+  // ---------- HELPER: Generate filename prefix ----------
+  function getFilenamePrefix() {
+  const i = collectInputs();
+  return `Loan_P${i.principal}_R${i.rate}_S${i.startDate}_T${i.tenureYears}y${i.tenureMonths}m`;
+}
+
+/* ---------- ALL EVENT BINDINGS WRAPPED IN DOMContentLoaded ---------- */
+document.addEventListener("DOMContentLoaded", function() {
+
+  document.getElementById("calcBtn").onclick = calculate;
+
+  ["startDate", "emiDay", "firstEmiDate"].forEach(id => {
+    document.getElementById(id).addEventListener("change", updateFirstEmiHint);
+  });
+
+  document.getElementById("addPrepayBtn").onclick = () => {
+    const f = document.getElementById("prepayForm");
+    f.style.display = f.style.display === "none" ? "block" : "none";
+  };
+  document.getElementById("savePrepayBtn").onclick = () => {
+    const date = document.getElementById("prepayDate").value;
+    const amount = +document.getElementById("prepayAmount").value;
+    const notes = document.getElementById("prepayNotes").value;
+    const strategy = document.getElementById("prepayStrategy").value;
+    if (!date || !amount) { toast("Date and amount required", "error"); return; }
+    state.prepayments.push({ date, amount, notes, strategy });
+    document.getElementById("prepayForm").style.display = "none";
+    document.getElementById("prepayDate").value = "";
+    document.getElementById("prepayAmount").value = "";
+    document.getElementById("prepayNotes").value = "";
+    renderPrepays(); saveState(); toast("Prepayment added", "success");
+  };
+
+  document.getElementById("addRateBtn").onclick = () => {
+    const f = document.getElementById("rateForm");
+    f.style.display = f.style.display === "none" ? "block" : "none";
+  };
+  document.getElementById("saveRateBtn").onclick = () => {
+    const date = document.getElementById("rateDate").value;
+    const rate = +document.getElementById("rateValue").value;
+    if (!date || !rate) { toast("Date and rate required", "error"); return; }
+    if (state.rateChanges.some(r => r.date === date)) { toast("Duplicate rate date", "error"); return; }
+    state.rateChanges.push({ date, rate });
+    document.getElementById("rateForm").style.display = "none";
+    document.getElementById("rateDate").value = "";
+    document.getElementById("rateValue").value = "";
+    renderRates(); saveState(); toast("Rate change added", "success");
+  };
+
+  document.getElementById("customEmi").addEventListener("change", () => {
+    state.customEmi = +document.getElementById("customEmi").value || 0;
+    saveState();
+    if (state.loan) calculate();
+  });
+
+  document.getElementById("roundUp1k").onclick = () => {
+    const inputs = collectInputs();
+    const baseEmi = calcEMI(inputs.principal, inputs.rate, inputs.tenureYears * 12 + inputs.tenureMonths);
+    const rounded = Math.ceil(baseEmi/1000)*1000;
+    document.getElementById("customEmi").value = rounded;
+    state.customEmi = rounded; calculate();
+  };
+  document.getElementById("roundUp5k").onclick = () => {
+    const inputs = collectInputs();
+    const baseEmi = calcEMI(inputs.principal, inputs.rate, inputs.tenureYears * 12 + inputs.tenureMonths);
+    const rounded = Math.ceil(baseEmi/5000)*5000;
+    document.getElementById("customEmi").value = rounded;
+    state.customEmi = rounded; calculate();
+  };
+  document.getElementById("clearExtra").onclick = () => {
+    document.getElementById("customEmi").value = "";
+    state.customEmi = 0; calculate();
+  };
+
+  document.querySelectorAll(".tab").forEach(t => {
+    t.onclick = () => {
+      document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(x=>x.classList.remove("active"));
+      t.classList.add("active");
+      document.getElementById("tab-" + t.dataset.tab).classList.add("active");
+      if (t.dataset.tab === "charts" && state.schedule.length) setTimeout(renderCharts, 50);
+    };
+  });
+
+  document.getElementById("scheduleSearch").addEventListener("input", e => {
+    state.searchQuery = e.target.value;
+    state.schedulePage = 1;
+    renderSchedule();
+  });
+
+  document.getElementById("themeToggle").onclick = () => {
+    const cur = document.documentElement.getAttribute("data-theme") || "light";
+    const next = cur === "light" ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", next);
+    document.getElementById("themeToggle").textContent = next === "dark" ? "☀️" : "🌙";
+    saveState();
+    if (state.schedule.length) setTimeout(renderCharts, 50);
+  };
+
+  // CSV imports
+  document.getElementById("prepayCsvImport").addEventListener("change", e => {
+    const f = e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      try {
+        const rows = parseCSV(r.result).filter(row => row.length > 0);
+        const hasHeader = rows[0] && rows[0][0] && rows[0][0].toLowerCase().includes("date");
+        let added = 0;
+        for (let i = hasHeader ? 1 : 0; i < rows.length; i++) {
+          const [date, amount, notes, strategy] = rows[i];
+          if (date && amount) {
+            state.prepayments.push({ date: ymd(new Date(date)), amount: parseFloat(amount), notes: notes || "", strategy: strategy || "reduceTenure" });
+            added++;
+          }
+        }
+        renderPrepays(); saveState();
+        toast(`Imported ${added} prepayments`, "success");
+      } catch(err) { toast("CSV error: " + err.message, "error"); }
+      e.target.value = "";
+    };
+    r.readAsText(f);
+  });
+
+  document.getElementById("rateCsvImport").addEventListener("change", e => {
+    const f = e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      try {
+        const rows = parseCSV(r.result).filter(row => row.length > 0);
+        const hasHeader = rows[0] && rows[0][0] && rows[0][0].toLowerCase().includes("date");
+        let added = 0;
+        for (let i = hasHeader ? 1 : 0; i < rows.length; i++) {
+          const [date, rate] = rows[i];
+          if (date && rate) { state.rateChanges.push({ date: ymd(new Date(date)), rate: parseFloat(rate) }); added++; }
+        }
+        renderRates(); saveState();
+        toast(`Imported ${added} rate changes`, "success");
+      } catch(err) { toast("CSV error", "error"); }
+      e.target.value = "";
+    };
+    r.readAsText(f);
+  });
+
+  document.getElementById("configCsvImport").addEventListener("change", e => {
+    const f = e.target.files[0]; if (!f) return;
+    if (!confirm("Replace current settings?")) { e.target.value = ""; return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const rows = parseCSV(reader.result);
+        const config = {}; const prepayments = []; const rateChanges = [];
+        let section = "fields"; let skipHeader = false;
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i];
+          if (!row || row.length === 0 || (row.length === 1 && !row[0])) continue;
+          const firstCell = (row[0] || "").trim();
+          if (firstCell === "Prepayments") { section = "prepayments"; skipHeader = true; continue; }
+          if (firstCell === "Rate Changes") { section = "rates"; skipHeader = true; continue; }
+          if (firstCell === "Field" && row[1] === "Value") continue;
+          if (skipHeader) { skipHeader = false; continue; }
+          if (section === "fields") {
+            const [key, value] = row;
+            if (key && value !== undefined) config[key] = value;
+          } else if (section === "prepayments") {
+            const [date, amount, notes, strategy] = row;
+            if (date && amount) prepayments.push({ date: ymd(new Date(date)), amount: parseFloat(amount), notes: notes || "", strategy: strategy || "reduceTenure" });
+          } else if (section === "rates") {
+            const [date, rate] = row;
+            if (date && rate) rateChanges.push({ date: ymd(new Date(date)), rate: parseFloat(rate) });
+          }
+        }
+        if (!config.principal || !config.rate || !config.startDate) { toast("Invalid config", "error"); return; }
+        applyInputs({
+          principal: parseFloat(config.principal), rate: parseFloat(config.rate),
+          emiDay: parseInt(config.emiDay) || 5,
+          startDate: ymd(new Date(config.startDate)),
+          firstEmiDate: config.firstEmiDate ? ymd(new Date(config.firstEmiDate)) : "",
+          tenureYears: parseInt(config.tenureYears) || 0,
+          tenureMonths: parseInt(config.tenureMonths) || 0,
+          compounding: config.compounding || "monthly",
+          dayCount: config.dayCount || "365",
+          processingFee: parseFloat(config.processingFee) || 0,
+          insurance: parseFloat(config.insurance) || 0
+        });
+        if (config.customEmi) document.getElementById("customEmi").value = parseFloat(config.customEmi);
+        state.prepayments = prepayments;
+        state.rateChanges = rateChanges;
+        renderPrepays(); renderRates(); updateFirstEmiHint();
+        saveState(); calculate();
+        toast(`✓ Imported: ${prepayments.length} prepayments, ${rateChanges.length} rates`, "success");
+      } catch (err) { toast("Import failed: " + err.message, "error"); }
+      e.target.value = "";
+    };
+    reader.readAsText(f);
+  });
+
+  document.getElementById("configJsonImport").addEventListener("change", e => {
+    const f = e.target.files[0]; if (!f) return;
+    if (!confirm("Replace all current data?")) { e.target.value = ""; return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (data.inputs) applyInputs(data.inputs);
+        if (data.prepayments) state.prepayments = data.prepayments;
+        if (data.rateChanges) state.rateChanges = data.rateChanges;
+        if (data.customEmi) {
+          document.getElementById("customEmi").value = data.customEmi;
+          state.customEmi = data.customEmi;
+        }
+        renderPrepays(); renderRates(); updateFirstEmiHint();
+        saveState(); calculate();
+        toast("✓ Backup restored", "success");
+      } catch (err) { toast("Invalid JSON file", "error"); }
+      e.target.value = "";
+    };
+    reader.readAsText(f);
+  });
+
+    // Exports
+  document.getElementById("exportSchedule").onclick = () => {
+    if (!state.schedule.length) { toast("Calculate first", "error"); return; }
+    const rows = [["Date","Event","EMI","Principal","Interest","Extra","Prepayment","Rate","Outstanding"]];
+    for (const r of state.schedule) rows.push([r.date, r.event, r.emi.toFixed(2), r.principal.toFixed(2), r.interest.toFixed(2), (r.extra||0).toFixed(2), r.prepay.toFixed(2), r.rate.toFixed(2), r.outstanding.toFixed(2)]);
+    downloadCSV(`${getFilenamePrefix()}_amortization_schedule.csv`, rows);
+  };
+
+  document.getElementById("exportYearly").onclick = () => {
+    if (!state.schedule.length) { toast("Calculate first", "error"); return; }
+    const byYear = {};
+    for (const r of state.schedule) {
+      const y = r.date.slice(0,4);
+      if (!byYear[y]) byYear[y] = { i:0, p:0, e:0, pp:0, close:0 };
+      byYear[y].i += r.interest; byYear[y].p += r.principal;
+      byYear[y].e += r.extra || 0; byYear[y].pp += r.prepay;
+      byYear[y].close = r.outstanding;
+    }
+    const rows = [["Year","Interest","Principal","Extra","Prepayment","Closing Balance"]];
+    for (const y in byYear) rows.push([y, byYear[y].i.toFixed(2), byYear[y].p.toFixed(2), byYear[y].e.toFixed(2), byYear[y].pp.toFixed(2), byYear[y].close.toFixed(2)]);
+    downloadCSV(`${getFilenamePrefix()}_yearly_summary.csv`, rows);
+  };
+
+  document.getElementById("exportConfig").onclick = () => {
+    const i = collectInputs();
+    const rows = [["Field","Value"]];
+    for (const k in i) rows.push([k, i[k]]);
+    rows.push(["customEmi", state.customEmi || 0]);
+    rows.push([]);
+    rows.push(["Prepayments"]);
+    rows.push(["Date","Amount","Notes","Strategy"]);
+    for (const p of state.prepayments) rows.push([p.date, p.amount, p.notes, p.strategy]);
+    rows.push([]);
+    rows.push(["Rate Changes"]);
+    rows.push(["Date","Rate"]);
+    for (const r of state.rateChanges) rows.push([r.date, r.rate]);
+    downloadCSV(`${getFilenamePrefix()}_loan_config.csv`, rows);
+  };
+
+  document.getElementById("exportJSON").onclick = () => {
+    const data = {
+      inputs: collectInputs(),
+      customEmi: state.customEmi,
+      prepayments: state.prepayments,
+      rateChanges: state.rateChanges,
+      exportedAt: new Date().toISOString(),
+      version: "1.3"
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${getFilenamePrefix()}_emi_backup.json`;
+    a.click();
+  };
+
+  // Sample data buttons
+  document.getElementById("sampleHomeBtn").onclick = () => {
+    applyInputs({ principal:9000000, rate:7.65, emiDay:5, startDate:"2025-06-30", firstEmiDate:"", tenureYears:30, tenureMonths:0, compounding:"monthly", dayCount:"365", processingFee:0, insurance:0 });
+    state.prepayments = []; state.rateChanges = []; state.customEmi = 0;
+    document.getElementById("customEmi").value = "";
+    renderPrepays(); renderRates(); updateFirstEmiHint(); calculate();
+  };
+  document.getElementById("sampleFloatBtn").onclick = () => {
+    applyInputs({ principal:7500000, rate:8.25, emiDay:10, startDate:"2024-04-01", firstEmiDate:"", tenureYears:25, tenureMonths:0, compounding:"monthly", dayCount:"365", processingFee:50000, insurance:25000 });
+    state.prepayments = []; state.customEmi = 0;
+    document.getElementById("customEmi").value = "";
+    state.rateChanges = [
+      { date:"2025-04-01", rate:8.75 },
+      { date:"2026-10-01", rate:9.25 },
+      { date:"2028-01-01", rate:7.90 }
+    ];
+    renderPrepays(); renderRates(); updateFirstEmiHint(); calculate();
+  };
+  document.getElementById("samplePrepayBtn").onclick = () => {
+    applyInputs({ principal:6000000, rate:9.0, emiDay:15, startDate:"2024-06-01", firstEmiDate:"", tenureYears:20, tenureMonths:0, compounding:"monthly", dayCount:"365", processingFee:30000, insurance:20000 });
+    state.rateChanges = []; state.customEmi = 0;
+    document.getElementById("customEmi").value = "";
+    state.prepayments = [
+      { date:"2025-08-15", amount:500000, notes:"Bonus", strategy:"reduceTenure" },
+      { date:"2027-01-10", amount:750000, notes:"FD maturity", strategy:"reduceTenure" },
+      { date:"2029-06-20", amount:1000000, notes:"Property sale", strategy:"reduceTenure" }
+    ];
+    renderPrepays(); renderRates(); updateFirstEmiHint(); calculate();
+  };
+  document.getElementById("sampleExtraBtn").onclick = () => {
+    applyInputs({ principal:5000000, rate:8.5, emiDay:5, startDate:"2025-01-01", firstEmiDate:"", tenureYears:20, tenureMonths:0, compounding:"monthly", dayCount:"365", processingFee:25000, insurance:15000 });
+    state.prepayments = []; state.rateChanges = [];
+    state.customEmi = 45000;
+    document.getElementById("customEmi").value = 45000;
+    renderPrepays(); renderRates(); updateFirstEmiHint(); calculate();
+  };
+
+  // INIT
+  if (!document.getElementById("startDate").value) {
+    document.getElementById("startDate").value = ymd(new Date());
+  }
+  loadState();
+  renderPrepays();
+  renderRates();
+  updateFirstEmiHint();
+  if (document.documentElement.getAttribute("data-theme") === "dark") {
+    document.getElementById("themeToggle").textContent = "☀️";
+  }
+  calculate();
+});
+</script>
+</body>
+</html>
