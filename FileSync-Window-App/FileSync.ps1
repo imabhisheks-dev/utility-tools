@@ -1,6 +1,6 @@
 # ============================================================
 # File Sync Daemon - Continuous Background Sync
-# Uses FileSystemWatcher for real-time file monitoring
+# Full recursive sync (includes hidden files/folders)
 # Author: Abhishek Singh
 # ============================================================
 
@@ -33,7 +33,6 @@ $script:ShowNotifications = ($ShowNotifications -eq "True" -or $ShowNotification
 $ErrorActionPreference = "Continue"
 
 try {
-    # Setup log path
     if ([string]::IsNullOrEmpty($LogFilePath)) {
         $logFolder = Join-Path -Path $env:USERPROFILE -ChildPath "FileSyncLogs"
         $LogFilePath = Join-Path -Path $logFolder -ChildPath "FileSyncDaemon.log"
@@ -45,12 +44,10 @@ try {
         New-Item -Path $logFolder -ItemType Directory -Force | Out-Null
     }
     
-    # Write startup marker immediately
     $startupMarker = "[" + (Get-Date -Format "yyyy-MM-dd HH:mm:ss") + "] [STARTUP] Daemon script invoked. PID: $PID"
     Add-Content -Path $LogFilePath -Value $startupMarker -ErrorAction Stop
     Add-Content -Path $LogFilePath -Value "[STARTUP] PowerShell Version: $($PSVersionTable.PSVersion)" -ErrorAction Stop
     
-    # Write PID file
     if (-not [string]::IsNullOrEmpty($PidFilePath)) {
         $PID | Out-File -FilePath $PidFilePath -Force -Encoding ASCII -ErrorAction Stop
     }
@@ -119,8 +116,8 @@ function Test-FileDifferent {
     if (-not (Test-Path -Path $DestFile)) { return $true }
     
     try {
-        $srcInfo = Get-Item -Path $SourceFile -ErrorAction Stop
-        $dstInfo = Get-Item -Path $DestFile -ErrorAction Stop
+        $srcInfo = Get-Item -Path $SourceFile -Force -ErrorAction Stop
+        $dstInfo = Get-Item -Path $DestFile -Force -ErrorAction Stop
         
         if ($srcInfo.Length -ne $dstInfo.Length) { return $true }
         if ($srcInfo.LastWriteTime -gt $dstInfo.LastWriteTime) { return $true }
@@ -140,7 +137,6 @@ function Sync-SingleFile {
     )
     
     try {
-        # Wait for file to be released by writing app
         Start-Sleep -Milliseconds 500
         
         if (-not (Test-Path -Path $SourceFile)) {
@@ -157,7 +153,6 @@ function Sync-SingleFile {
         }
         
         if (Test-FileDifferent -SourceFile $SourceFile -DestFile $destFile) {
-            # Retry logic for locked files
             $maxRetries = 3
             $retryCount = 0
             $success = $false
@@ -178,7 +173,7 @@ function Sync-SingleFile {
                 }
             }
             
-            $fileInfo = Get-Item -Path $SourceFile
+            $fileInfo = Get-Item -Path $SourceFile -Force
             $sizeKB = [math]::Round($fileInfo.Length / 1KB, 2)
             Write-Log -Message "SYNCED: $relativePath (Size: $sizeKB KB)" -Level "SUCCESS"
             
@@ -223,11 +218,15 @@ function Invoke-InitialSync {
         [string]$Destination
     )
     
-    Write-Log -Message "Starting initial sync scan..." -Level "INFO"
+    Write-Log -Message "Starting initial sync scan (full recursive, including hidden files)..." -Level "INFO"
     $syncCount = 0
     
     try {
-        $allFiles = Get-ChildItem -Path $Source -Recurse -File -ErrorAction Stop
+        # -Force includes hidden and system files/folders (like .git)
+        $allFiles = Get-ChildItem -Path $Source -Recurse -File -Force -ErrorAction Stop
+        
+        $totalFiles = ($allFiles | Measure-Object).Count
+        Write-Log -Message "Total files found: $totalFiles" -Level "INFO"
         
         foreach ($file in $allFiles) {
             $result = Sync-SingleFile -SourceFile $file.FullName -Source $Source -Destination $Destination
@@ -247,7 +246,7 @@ function Invoke-InitialSync {
 # Main Execution
 # ============================================================
 
-# Clean paths - remove trailing backslashes
+# Clean paths
 $SourceFolder = $SourceFolder.Trim().TrimEnd('\')
 $TargetFolder = $TargetFolder.Trim().TrimEnd('\')
 
@@ -256,6 +255,7 @@ Write-Log -Message "File Sync Daemon STARTED (PID: $PID)" -Level "INFO"
 Write-Log -Message "Source: $SourceFolder" -Level "INFO"
 Write-Log -Message "Target: $TargetFolder" -Level "INFO"
 Write-Log -Message "Notifications: $script:ShowNotifications" -Level "INFO"
+Write-Log -Message "Mode: FULL RECURSIVE (no exclusions)" -Level "INFO"
 Write-Log -Message "==========================================" -Level "INFO"
 
 # Validate source
@@ -302,7 +302,6 @@ $watcher.NotifyFilter = [System.IO.NotifyFilters]::LastWrite -bor `
 
 Write-Log -Message "FileSystemWatcher active. Monitoring for changes..." -Level "INFO"
 
-# Track recent changes for debouncing
 $script:recentChanges = @{}
 $script:debounceMs = 1000
 
@@ -320,7 +319,7 @@ try {
             break
         }
         
-        # Wait for changes (1 second timeout for stop signal check)
+        # Wait for changes
         $result = $watcher.WaitForChanged([System.IO.WatcherChangeTypes]::All, 1000)
         
         if (-not $result.TimedOut) {
@@ -389,7 +388,6 @@ catch {
     Show-Notification -Title "Sync Service Crashed" -Message "Check logs for details"
 }
 finally {
-    # Cleanup
     if ($watcher) {
         $watcher.EnableRaisingEvents = $false
         $watcher.Dispose()
