@@ -252,5 +252,5 @@ Multiple profiles = multiple PowerShell processes. Each adds ~30-50 MB RAM.
 ## Support
 
 **Author:** Abhishek Singh  
-**Email:** abhishek.singh7@spglobal.com  
+**Email:** standalone.abhishek@gmail.com  
 **Team:** IT - Application Development
