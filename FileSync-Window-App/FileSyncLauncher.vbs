@@ -1,12 +1,12 @@
 ' ============================================================
-' File Sync Control Panel
+' File Sync Control Panel (Multi-Profile Support)
 ' Author: Abhishek Singh
-' Purpose: Start / Stop / Manage the background sync daemon
 ' ============================================================
 
 Option Explicit
 
-Dim objShell, objFSO, scriptPath, psScriptPath
+Dim objShell, objFSO, scriptPath, psScriptPath, profilesRoot, logsRoot
+Dim currentProfile, profilePath
 Dim configFilePath, pidFilePath, stopFilePath, logFilePath
 Dim savedSource, savedTarget, savedNotifications
 
@@ -15,15 +15,8 @@ Set objFSO = CreateObject("Scripting.FileSystemObject")
 
 scriptPath = objFSO.GetParentFolderName(WScript.ScriptFullName)
 psScriptPath = scriptPath & "\FileSync.ps1"
-configFilePath = scriptPath & "\FileSyncConfig.ini"
-pidFilePath = scriptPath & "\FileSync.pid"
-stopFilePath = scriptPath & "\FileSync.stop"
-logFilePath = objShell.ExpandEnvironmentStrings("%USERPROFILE%") & "\FileSyncLogs\FileSyncDaemon.log"
-
-' Defaults
-savedSource = "D:\as7.workspace\Nagarro-Hackathon\team-vikings"
-savedTarget = "\\tf-fileserver.thinkfoliohosted.com\share\Users\as7.network\team-vikings"
-savedNotifications = "False"
+profilesRoot = scriptPath & "\Profiles"
+logsRoot = objShell.ExpandEnvironmentStrings("%USERPROFILE%") & "\FileSyncLogs"
 
 ' Validate PS1 exists
 If Not objFSO.FileExists(psScriptPath) Then
@@ -31,11 +24,127 @@ If Not objFSO.FileExists(psScriptPath) Then
     WScript.Quit
 End If
 
-' Load config if exists
+' Ensure Profiles folder exists
+If Not objFSO.FolderExists(profilesRoot) Then objFSO.CreateFolder(profilesRoot)
+If Not objFSO.FolderExists(logsRoot) Then objFSO.CreateFolder(logsRoot)
+
+' Select or create a profile
+If Not SelectProfile() Then WScript.Quit
+
+' Load selected profile config
 If objFSO.FileExists(configFilePath) Then LoadConfig()
 
 ' Show main menu
 ShowMainMenu()
+
+' ============================================================
+' Profile Selection
+' ============================================================
+Function SelectProfile()
+    SelectProfile = False
+    
+    Dim profiles, profileList, i, choice, folder
+    profileList = ""
+    i = 0
+    ReDim profiles(100)
+    
+    ' List existing profiles
+    Dim profileFolder
+    Set profileFolder = objFSO.GetFolder(profilesRoot)
+    For Each folder In profileFolder.SubFolders
+        profiles(i) = folder.Name
+        profileList = profileList & "  " & (i + 1) & " - " & folder.Name & vbCrLf
+        i = i + 1
+    Next
+    
+    Dim menuMsg
+    menuMsg = "===== SELECT SYNC PROFILE =====" & vbCrLf & vbCrLf
+    
+    If i = 0 Then
+        menuMsg = menuMsg & "No profiles found yet." & vbCrLf & vbCrLf
+    Else
+        menuMsg = menuMsg & "Existing profiles:" & vbCrLf & profileList & vbCrLf
+    End If
+    
+    menuMsg = menuMsg & "  N - Create NEW profile" & vbCrLf & _
+              "  0 - Exit" & vbCrLf & vbCrLf & _
+              "Enter profile number, 'N' for new, or '0' to exit:"
+    
+    choice = InputBox(menuMsg, "File Sync - Profile Selection", "1")
+    
+    If choice = "" Or choice = "0" Then Exit Function
+    
+    choice = Trim(UCase(choice))
+    
+    If choice = "N" Then
+        Dim newName
+        newName = InputBox("Enter a name for the new profile (letters, numbers, hyphens only):" & vbCrLf & vbCrLf & _
+                           "Examples: Work, Personal, Project-Alpha", _
+                           "New Profile", "Profile1")
+        
+        If newName = "" Then Exit Function
+        
+        newName = Trim(newName)
+        
+        ' Sanitize name
+        If Not IsValidProfileName(newName) Then
+            MsgBox "Invalid profile name. Use only letters, numbers, and hyphens.", vbExclamation, "File Sync"
+            Exit Function
+        End If
+        
+        If objFSO.FolderExists(profilesRoot & "\" & newName) Then
+            MsgBox "Profile already exists: " & newName, vbExclamation, "File Sync"
+            Exit Function
+        End If
+        
+        objFSO.CreateFolder(profilesRoot & "\" & newName)
+        currentProfile = newName
+    Else
+        Dim idx
+        If Not IsNumeric(choice) Then
+            MsgBox "Invalid choice.", vbExclamation, "File Sync"
+            Exit Function
+        End If
+        
+        idx = CInt(choice) - 1
+        If idx < 0 Or idx >= i Then
+            MsgBox "Invalid profile number.", vbExclamation, "File Sync"
+            Exit Function
+        End If
+        
+        currentProfile = profiles(idx)
+    End If
+    
+    ' Set paths for this profile
+    profilePath = profilesRoot & "\" & currentProfile
+    configFilePath = profilePath & "\config.ini"
+    pidFilePath = profilePath & "\sync.pid"
+    stopFilePath = profilePath & "\sync.stop"
+    logFilePath = logsRoot & "\" & currentProfile & ".log"
+    
+    ' Defaults
+    savedSource = ""
+    savedTarget = ""
+    savedNotifications = "False"
+    
+    SelectProfile = True
+End Function
+
+Function IsValidProfileName(name)
+    Dim i, ch
+    IsValidProfileName = False
+    If Len(name) = 0 Or Len(name) > 50 Then Exit Function
+    
+    For i = 1 To Len(name)
+        ch = Mid(name, i, 1)
+        If Not ((ch >= "a" And ch <= "z") Or (ch >= "A" And ch <= "Z") Or _
+                (ch >= "0" And ch <= "9") Or ch = "-" Or ch = "_") Then
+            Exit Function
+        End If
+    Next
+    
+    IsValidProfileName = True
+End Function
 
 ' ============================================================
 ' Main Menu
@@ -52,7 +161,7 @@ Sub ShowMainMenu()
             statusText = "STOPPED"
         End If
         
-        menuMsg = "===== FILE SYNC CONTROL PANEL =====" & vbCrLf & vbCrLf & _
+        menuMsg = "===== FILE SYNC: " & currentProfile & " =====" & vbCrLf & vbCrLf & _
                   "Status: " & statusText & vbCrLf & vbCrLf & _
                   "Source: " & savedSource & vbCrLf & _
                   "Target: " & savedTarget & vbCrLf & vbCrLf & _
@@ -62,48 +171,45 @@ Sub ShowMainMenu()
                   "  3 - View Log File" & vbCrLf & _
                   "  4 - Change Settings" & vbCrLf & _
                   "  5 - View Status" & vbCrLf & _
+                  "  6 - Switch Profile" & vbCrLf & _
                   "  0 - Exit Control Panel" & vbCrLf & vbCrLf & _
-                  "Enter your choice (0-5):"
+                  "Enter your choice:"
         
-        choice = InputBox(menuMsg, "File Sync Control Panel", "1")
+        choice = InputBox(menuMsg, "File Sync - " & currentProfile, "1")
         
         If choice = "" Then Exit Sub
-        
         choice = Trim(choice)
         
         Select Case choice
-            Case "1"
-                StartSyncService()
-            Case "2"
-                StopSyncService()
-            Case "3"
-                ViewLogFile()
-            Case "4"
-                ChangeSettings()
-            Case "5"
-                ShowStatus()
-            Case "0"
-                Exit Sub
-            Case Else
-                MsgBox "Invalid choice. Please enter a number between 0 and 5.", vbExclamation, "File Sync"
+            Case "1" : StartSyncService()
+            Case "2" : StopSyncService()
+            Case "3" : ViewLogFile()
+            Case "4" : ChangeSettings()
+            Case "5" : ShowStatus()
+            Case "6"
+                If SelectProfile() Then
+                    If objFSO.FileExists(configFilePath) Then LoadConfig()
+                Else
+                    Exit Sub
+                End If
+            Case "0" : Exit Sub
+            Case Else : MsgBox "Invalid choice.", vbExclamation, "File Sync"
         End Select
     Loop
 End Sub
 
 ' ============================================================
-' Start the sync daemon
+' Start Sync Service
 ' ============================================================
 Sub StartSyncService()
     If IsSyncRunning() Then
-        MsgBox "Sync service is already running (PID: " & GetSyncPid() & ")" & vbCrLf & vbCrLf & _
-               "Stop it first if you want to restart with new settings.", _
-               vbInformation, "File Sync - Already Running"
+        MsgBox "Sync service for profile '" & currentProfile & "' is already running." & vbCrLf & _
+               "PID: " & GetSyncPid(), vbInformation, "File Sync"
         Exit Sub
     End If
     
-    ' First-time setup if no config
     If Not objFSO.FileExists(configFilePath) Then
-        If MsgBox("No settings found. Configure now?", vbQuestion + vbYesNo, "File Sync") = vbYes Then
+        If MsgBox("Profile not configured yet. Configure now?", vbQuestion + vbYesNo, "File Sync") = vbYes Then
             ChangeSettings()
             If Not objFSO.FileExists(configFilePath) Then Exit Sub
         Else
@@ -111,29 +217,18 @@ Sub StartSyncService()
         End If
     End If
     
-    ' Sanitize paths - remove trailing backslashes
     savedSource = CleanPath(savedSource)
     savedTarget = CleanPath(savedTarget)
     
-    ' Validate source
     If Not objFSO.FolderExists(savedSource) Then
-        MsgBox "Source folder does not exist:" & vbCrLf & savedSource & vbCrLf & vbCrLf & _
-               "Please update settings.", vbExclamation, "File Sync"
+        MsgBox "Source folder does not exist:" & vbCrLf & savedSource, vbExclamation, "File Sync"
         Exit Sub
-    End If
-    
-    ' Ensure log folder exists
-    Dim logFolderPath
-    logFolderPath = objFSO.GetParentFolderName(logFilePath)
-    If Not objFSO.FolderExists(logFolderPath) Then
-        CreateFolderRecursive(logFolderPath)
     End If
     
     ' Clean up any leftover files
     If objFSO.FileExists(stopFilePath) Then objFSO.DeleteFile stopFilePath, True
     If objFSO.FileExists(pidFilePath) Then objFSO.DeleteFile pidFilePath, True
     
-    ' Build command
     Dim psCommand
     psCommand = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File """ & psScriptPath & """" & _
                 " -SourceFolder """ & savedSource & """" & _
@@ -143,10 +238,8 @@ Sub StartSyncService()
                 " -PidFilePath """ & pidFilePath & """" & _
                 " -StopFilePath """ & stopFilePath & """"
     
-    ' Launch hidden, non-blocking
     objShell.Run psCommand, 0, False
     
-    ' Wait for PID file (up to 15 seconds)
     Dim waitCount
     waitCount = 0
     Do While Not objFSO.FileExists(pidFilePath) And waitCount < 60
@@ -155,57 +248,37 @@ Sub StartSyncService()
     Loop
     
     If objFSO.FileExists(pidFilePath) Then
-        MsgBox "Sync service started successfully!" & vbCrLf & vbCrLf & _
+        MsgBox "Sync service started for profile: " & currentProfile & vbCrLf & vbCrLf & _
                "PID: " & GetSyncPid() & vbCrLf & _
-               "Status: Running in background" & vbCrLf & vbCrLf & _
-               "The service will now monitor your source folder for changes" & vbCrLf & _
-               "and sync them automatically to the target." & vbCrLf & vbCrLf & _
-               "Log file: " & logFilePath, _
-               vbInformation, "File Sync - Started"
+               "Log: " & logFilePath, vbInformation, "File Sync - Started"
     Else
-        Dim errorMsg
-        errorMsg = "Sync service failed to start." & vbCrLf & vbCrLf
-        
-        If objFSO.FileExists(logFilePath) Then
-            errorMsg = errorMsg & "Log file exists. Open it to see the error?"
-            If MsgBox(errorMsg, vbExclamation + vbYesNo, "File Sync - Failed") = vbYes Then
-                objShell.Run "notepad++.exe """ & logFilePath & """", 1, False
-            End If
-        Else
-            errorMsg = errorMsg & "Log file was not created. PowerShell likely failed to launch." & vbCrLf & _
-                       "Check that PowerShell execution policy allows scripts."
-            MsgBox errorMsg, vbExclamation, "File Sync - Failed"
-        End If
+        MsgBox "Sync service failed to start. Check log: " & logFilePath, vbExclamation, "File Sync"
     End If
 End Sub
 
 ' ============================================================
-' Stop the sync daemon
+' Stop Sync Service
 ' ============================================================
 Sub StopSyncService()
     If Not IsSyncRunning() Then
-        MsgBox "Sync service is not running.", vbInformation, "File Sync"
+        MsgBox "Sync service for profile '" & currentProfile & "' is not running.", vbInformation, "File Sync"
         Exit Sub
     End If
     
     Dim pidValue
     pidValue = GetSyncPid()
     
-    If MsgBox("Are you sure you want to stop the sync service?" & vbCrLf & vbCrLf & _
-              "PID: " & pidValue & vbCrLf & _
-              "Any pending file changes may not be synced.", _
-              vbQuestion + vbYesNo, "File Sync - Confirm Stop") = vbNo Then
+    If MsgBox("Stop sync service for profile '" & currentProfile & "'?" & vbCrLf & _
+              "PID: " & pidValue, vbQuestion + vbYesNo, "File Sync") = vbNo Then
         Exit Sub
     End If
     
-    ' Create stop signal
     Dim stopFile
     Set stopFile = objFSO.CreateTextFile(stopFilePath, True)
     stopFile.WriteLine "stop"
     stopFile.Close
     Set stopFile = Nothing
     
-    ' Wait for graceful stop (up to 10 seconds)
     Dim waitCount
     waitCount = 0
     Do While objFSO.FileExists(pidFilePath) And waitCount < 40
@@ -213,9 +286,8 @@ Sub StopSyncService()
         waitCount = waitCount + 1
     Loop
     
-    ' Force kill if needed
     If objFSO.FileExists(pidFilePath) Then
-        If MsgBox("Graceful stop failed. Force kill the process?", vbQuestion + vbYesNo, "File Sync") = vbYes Then
+        If MsgBox("Graceful stop failed. Force kill?", vbQuestion + vbYesNo, "File Sync") = vbYes Then
             objShell.Run "taskkill /F /PID " & pidValue, 0, True
             WScript.Sleep 500
             If objFSO.FileExists(pidFilePath) Then objFSO.DeleteFile pidFilePath, True
@@ -223,39 +295,35 @@ Sub StopSyncService()
             MsgBox "Sync service forcefully terminated.", vbInformation, "File Sync"
         End If
     Else
-        MsgBox "Sync service stopped successfully.", vbInformation, "File Sync - Stopped"
+        MsgBox "Sync service stopped: " & currentProfile, vbInformation, "File Sync"
     End If
 End Sub
 
 ' ============================================================
-' View log file
+' View Log File
 ' ============================================================
 Sub ViewLogFile()
     If Not objFSO.FileExists(logFilePath) Then
-        MsgBox "Log file does not exist yet:" & vbCrLf & logFilePath & vbCrLf & vbCrLf & _
-               "Start the sync service first.", vbInformation, "File Sync"
+        MsgBox "Log file does not exist yet:" & vbCrLf & logFilePath, vbInformation, "File Sync"
         Exit Sub
     End If
-    
-    objShell.Run "notepad++.exe """ & logFilePath & """", 1, False
+    objShell.Run "notepad.exe """ & logFilePath & """", 1, False
 End Sub
 
 ' ============================================================
-' Change settings
+' Change Settings
 ' ============================================================
 Sub ChangeSettings()
     If IsSyncRunning() Then
-        If MsgBox("Sync service is running. Settings changes will only take effect after restart." & vbCrLf & vbCrLf & _
-                  "Continue with settings change?", vbQuestion + vbYesNo, "File Sync") = vbNo Then
-            Exit Sub
-        End If
+        If MsgBox("Service is running. Changes take effect after restart. Continue?", _
+                  vbQuestion + vbYesNo, "File Sync") = vbNo Then Exit Sub
     End If
     
     Dim newSource, newTarget, response
     
-    ' Source
     Do
-        newSource = InputBox("Enter SOURCE folder path:", "Settings - Source Folder", savedSource)
+        newSource = InputBox("Enter SOURCE folder for profile '" & currentProfile & "':", _
+                             "Settings - Source", savedSource)
         If newSource = "" Then Exit Sub
         newSource = CleanPath(newSource)
         If Not objFSO.FolderExists(newSource) Then
@@ -264,9 +332,9 @@ Sub ChangeSettings()
         End If
     Loop Until newSource <> ""
     
-    ' Target
     Do
-        newTarget = InputBox("Enter TARGET folder path:", "Settings - Target Folder", savedTarget)
+        newTarget = InputBox("Enter TARGET folder for profile '" & currentProfile & "':", _
+                             "Settings - Target", savedTarget)
         If newTarget = "" Then Exit Sub
         newTarget = CleanPath(newTarget)
         If Len(newTarget) < 3 Then
@@ -278,68 +346,48 @@ Sub ChangeSettings()
         End If
     Loop Until newTarget <> ""
     
-    ' Notifications
-    response = MsgBox("Show notification for each file synced?" & vbCrLf & vbCrLf & _
-                      "YES - Notify every file (verbose)" & vbCrLf & _
-                      "NO  - Silent (recommended)", _
-                      vbQuestion + vbYesNo, "Settings - Notifications")
+    response = MsgBox("Show notification for each file synced?", vbQuestion + vbYesNo, "Settings")
     
     savedSource = newSource
     savedTarget = newTarget
-    If response = vbYes Then
-        savedNotifications = "True"
-    Else
-        savedNotifications = "False"
-    End If
+    If response = vbYes Then savedNotifications = "True" Else savedNotifications = "False"
     
     SaveConfig()
-    
-    MsgBox "Settings saved successfully!" & vbCrLf & vbCrLf & _
-           "Source: " & savedSource & vbCrLf & _
-           "Target: " & savedTarget & vbCrLf & _
-           "Notifications: " & savedNotifications, _
-           vbInformation, "File Sync - Settings Saved"
+    MsgBox "Settings saved for profile: " & currentProfile, vbInformation, "File Sync"
 End Sub
 
 ' ============================================================
-' Show detailed status
+' Show Status
 ' ============================================================
 Sub ShowStatus()
-    Dim statusMsg, isRunning
-    isRunning = IsSyncRunning()
+    Dim statusMsg
+    statusMsg = "===== PROFILE: " & currentProfile & " =====" & vbCrLf & vbCrLf
     
-    statusMsg = "===== SYNC SERVICE STATUS =====" & vbCrLf & vbCrLf
-    
-    If isRunning Then
-        statusMsg = statusMsg & "Service State: RUNNING" & vbCrLf
-        statusMsg = statusMsg & "Process ID:    " & GetSyncPid() & vbCrLf
+    If IsSyncRunning() Then
+        statusMsg = statusMsg & "State: RUNNING" & vbCrLf & "PID: " & GetSyncPid() & vbCrLf
     Else
-        statusMsg = statusMsg & "Service State: STOPPED" & vbCrLf
+        statusMsg = statusMsg & "State: STOPPED" & vbCrLf
     End If
     
-    statusMsg = statusMsg & vbCrLf & "Configuration:" & vbCrLf
-    statusMsg = statusMsg & "  Source: " & savedSource & vbCrLf
-    statusMsg = statusMsg & "  Target: " & savedTarget & vbCrLf
-    statusMsg = statusMsg & "  Notifications: " & savedNotifications & vbCrLf
-    statusMsg = statusMsg & vbCrLf & "Log File:" & vbCrLf & "  " & logFilePath
+    statusMsg = statusMsg & vbCrLf & "Source: " & savedSource & vbCrLf & _
+                "Target: " & savedTarget & vbCrLf & _
+                "Notifications: " & savedNotifications & vbCrLf & vbCrLf & _
+                "Log: " & logFilePath
     
     MsgBox statusMsg, vbInformation, "File Sync - Status"
 End Sub
 
 ' ============================================================
-' Check if sync daemon is running
+' Utility Functions
 ' ============================================================
 Function IsSyncRunning()
     IsSyncRunning = False
-    
     If Not objFSO.FileExists(pidFilePath) Then Exit Function
     
     Dim pidValue
     pidValue = GetSyncPid()
-    
     If pidValue = "" Then Exit Function
     
-    ' Verify process exists via WMI
     Dim wmi, processes, proc
     On Error Resume Next
     Set wmi = GetObject("winmgmts:\\.\root\cimv2")
@@ -352,67 +400,37 @@ Function IsSyncRunning()
         Next
     End If
     
-    ' Cleanup stale PID file
     If Not IsSyncRunning Then
         On Error Resume Next
         objFSO.DeleteFile pidFilePath, True
     End If
-    
     On Error Goto 0
 End Function
 
-' ============================================================
-' Get PID from file
-' ============================================================
 Function GetSyncPid()
     GetSyncPid = ""
     If Not objFSO.FileExists(pidFilePath) Then Exit Function
     
     On Error Resume Next
-    Dim pidFile, pidValue
+    Dim pidFile
     Set pidFile = objFSO.OpenTextFile(pidFilePath, 1)
     If Err.Number = 0 Then
-        pidValue = Trim(pidFile.ReadAll)
+        GetSyncPid = Trim(pidFile.ReadAll)
         pidFile.Close
-        GetSyncPid = pidValue
     End If
     On Error Goto 0
 End Function
 
-' ============================================================
-' Clean path - remove trailing backslashes and quotes
-' ============================================================
 Function CleanPath(pathStr)
     Dim result
     result = Trim(pathStr)
     result = Replace(result, Chr(34), "")
-    
-    ' Remove trailing backslashes (critical for PowerShell command line)
     Do While Right(result, 1) = "\" And Len(result) > 3
         result = Left(result, Len(result) - 1)
     Loop
-    
     CleanPath = result
 End Function
 
-' ============================================================
-' Create folder recursively
-' ============================================================
-Sub CreateFolderRecursive(folderPath)
-    If objFSO.FolderExists(folderPath) Then Exit Sub
-    Dim parentPath
-    parentPath = objFSO.GetParentFolderName(folderPath)
-    If parentPath <> "" And Not objFSO.FolderExists(parentPath) Then
-        CreateFolderRecursive(parentPath)
-    End If
-    On Error Resume Next
-    objFSO.CreateFolder(folderPath)
-    On Error Goto 0
-End Sub
-
-' ============================================================
-' Save config
-' ============================================================
 Sub SaveConfig()
     Dim configFile
     On Error Resume Next
@@ -425,12 +443,8 @@ Sub SaveConfig()
     configFile.WriteLine "TargetFolder=" & savedTarget
     configFile.WriteLine "ShowNotifications=" & savedNotifications
     configFile.Close
-    Set configFile = Nothing
 End Sub
 
-' ============================================================
-' Load config
-' ============================================================
 Sub LoadConfig()
     Dim configFile, line, parts
     On Error Resume Next
@@ -444,17 +458,12 @@ Sub LoadConfig()
             If InStr(line, "=") > 0 Then
                 parts = Split(line, "=", 2)
                 Select Case Trim(parts(0))
-                    Case "SourceFolder"
-                        savedSource = CleanPath(Trim(parts(1)))
-                    Case "TargetFolder"
-                        savedTarget = CleanPath(Trim(parts(1)))
-                    Case "ShowNotifications"
-                        savedNotifications = Trim(parts(1))
+                    Case "SourceFolder"      : savedSource = CleanPath(Trim(parts(1)))
+                    Case "TargetFolder"      : savedTarget = CleanPath(Trim(parts(1)))
+                    Case "ShowNotifications" : savedNotifications = Trim(parts(1))
                 End Select
             End If
         End If
     Loop
-    
     configFile.Close
-    Set configFile = Nothing
 End Sub
